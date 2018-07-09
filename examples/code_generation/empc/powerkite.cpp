@@ -338,7 +338,8 @@ int main( ){
     const uint N 		  = 18;
     
 	OCP ocp( t_start, t_end, N );
-    ocp.minimizeMayerTerm( W );
+    //ocp.minimizeMayerTerm( W );
+    ocp.minimizeLagrangeTerm( W );
 	
 	ocp.setModel( f );
 

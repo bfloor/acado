@@ -1,5 +1,5 @@
 /*
- *    This file is part of ACADO Toolkit.
+s file is part of ACADO Toolkit.
  *
  *    ACADO Toolkit -- A Toolkit for Automatic Control and Dynamic Optimization.
  *    Copyright (C) 2008-2014 by Boris Houska, Hans Joachim Ferreau,
@@ -29,10 +29,9 @@
   *    \author Boris Houska, Filip Logist, Rien Quirynen
   *    \date   2014
   */
-
 #include <acado_optimal_control.hpp>
 #include <acado_gnuplot.hpp>
-
+#include <acado_code_generation.hpp>
 
 /* >>> start tutorial code >>> */
 int main( ){
@@ -41,88 +40,94 @@ int main( ){
 
     // INTRODUCE THE VARIABLES:
     // -------------------------
-    DifferentialState     X,S,P;
-    Control               Sf   ;
-    IntermediateState     mu   ;
+    DifferentialState     x,y,theta;
+    Control               v,w   ;
     DifferentialEquation  f    ;
-    
-    const double D       = 0.15;
-    const double Ki      = 22.0;
-    const double Km      = 1.2 ; 
-    const double Pm      = 50.0;
-    const double Yxs     = 0.4 ;
-    const double alpha   = 2.2 ;
-    const double beta    = 0.2 ;
-    const double mum     = 0.48;
-    // const double Sfbar   = 32.9;
-    const double Sfmin   = 28.7;
-    const double Sfmax   = 40.0;
-    // const double Xbarmax = 5.8 ;
 
-    const double t_start =  0.0;
-    const double t_end   = 48.0;
+    OnlineData goal_x;
+    OnlineData goal_y;
+    OnlineData goal_theta;
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
-
-    mu = mum*(1.-P/Pm)*S/(Km+S+pow(S,2)/Ki);
     
-    f << dot(X) == -D*X+mu*X;
-    f << dot(S) == D*(Sf-S)-(mu/Yxs)*X;
-    f << dot(P) == -D*P+(alpha*mu+beta)*X;
-
+    f << dot(x) == v*cos(theta);
+    f << dot(y) == v*sin(theta);
+    f << dot(theta) == w;
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
-    OCP ocp( t_start, t_end, 20 );
-    ocp.minimizeLagrangeTerm( D*(Sf-P) );  // weight this with the physical cost!!!
+    OCP ocp( 0.0, 3.0, 20.0 );
+
+    // Need to set the number of online variables!
+    ocp.setNOD(3);
+
+    ocp.minimizeLagrangeTerm( (x-goal_x)*(x-goal_x)+(y-goal_y)*(y-goal_y)+(theta-goal_theta)*(theta-goal_theta)+v*v+w*w );  // weight this with the physical cost!!!
     ocp.subjectTo( f );
 
-    ocp.subjectTo( AT_START, X ==  6.5 );
-    ocp.subjectTo( AT_START, S == 12.0 );
-    ocp.subjectTo( AT_START, P == 22.0 );
-    
-//     ocp.subjectTo( 0.0, X , -X, 0.0 );
-//     ocp.subjectTo( 0.0, S , -S, 0.0 );
-//     ocp.subjectTo( 0.0, P , -P, 0.0 );
+    //ocp.subjectTo( AT_START, x ==  2.0 );
+    //ocp.subjectTo( AT_START, y == 2.0 );
+    //ocp.subjectTo( AT_START, theta == 2.0 );
 
-    ocp.subjectTo( Sfmin <= Sf <= Sfmax );
+    ocp.subjectTo( -1.0 <= v <= 1.0 );
+    ocp.subjectTo( -1.0 <= w <= 1.0 );
 
 
     // DEFINE A PLOT WINDOW:
     // ---------------------
     GnuplotWindow window;
-        window.addSubplot( X ,"X"  );
-        window.addSubplot( S ,"S"  );
-        window.addSubplot( P ,"P"  );
-        window.addSubplot( Sf,"Sf" );
+        window.addSubplot( x ,"X"  );
+        window.addSubplot( y ,"Y"  );
+        window.addSubplot( theta ,"Theta"  );
+        window.addSubplot( v,"V" );
 
 
     // DEFINE AN OPTIMIZATION ALGORITHM AND SOLVE THE OCP:
     // ---------------------------------------------------
-    OptimizationAlgorithm algorithm(ocp);
-    algorithm.set( HESSIAN_APPROXIMATION, EXACT_HESSIAN );
+	/*OptimizationAlgorithm algorithm(ocp);
+	//RealTimeAlgorithm algorithm(ocp);
+    algorithm.set( HESSIAN_APPROXIMATION, BLOCK_BFGS_UPDATE );
+	algorithm.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
+	algorithm.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
+	algorithm.set(PRINT_COPYRIGHT, false);                 // default true
+	algorithm.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING);
+	Grid t(0,5.0,50);
+	VariablesGrid s2(3,0,5.0,50),c2(2,0,5.0,50);
+	DVector state_ini(4);
+	state_ini.setAll(2.0);
+	state_ini(0)=0;
+    algorithm.initializeDifferentialStates(s2);
+    algorithm.initializeControls          (c2);
     
-    algorithm.initializeDifferentialStates("s2.txt");
-    algorithm.initializeControls          ("c2.txt");
-    
-    algorithm.set( MAX_NUM_ITERATIONS, 20 );
+    algorithm.set( MAX_NUM_ITERATIONS, 100 );
     algorithm.set( KKT_TOLERANCE, 1e-8 );
     algorithm << window;
-    
-    algorithm.solve();
-
+    //algorithm.solve(0.0,state_ini);
+	algorithm.solve();
     VariablesGrid s3,c3;
     algorithm.getDifferentialStates(s3);
-    algorithm.getControls          (c3);
-    
-    std::ofstream stream1( "s3.txt" );
-	
-    s3.print(stream1, 0," "," ", 16, 16, " ", "\n" );
-//     s3.print(stream, " ", PS_PLAIN );
-    stream1.close();
-    
+    algorithm.getControls          (c3);*/
+
+	// DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
+	// ----------------------------------------------------------
+	OCPexport mpc( ocp );
+
+	mpc.set( HESSIAN_APPROXIMATION,       EXACT_HESSIAN  		);
+	mpc.set( DISCRETIZATION_TYPE,         MULTIPLE_SHOOTING 	);
+	mpc.set( INTEGRATOR_TYPE,             INT_RK4			);
+	mpc.set( NUM_INTEGRATOR_STEPS,        18            		);
+	mpc.set( QP_SOLVER,                   QP_QPOASES    		);
+	mpc.set( HOTSTART_QP,                 NO             		);
+	mpc.set( GENERATE_TEST_FILE,          YES            		);
+	mpc.set( GENERATE_MAKE_FILE,          YES            		);
+	mpc.set( GENERATE_MATLAB_INTERFACE,   NO            		);
+	mpc.set( SPARSE_QP_SOLUTION, 		  FULL_CONDENSING_N2	);
+	mpc.set( DYNAMIC_SENSITIVITY, 		  SYMMETRIC				);
+	mpc.set( CG_HARDCODE_CONSTRAINT_VALUES, NO 					);
+	mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES 				);
+
+	mpc.exportCode( "generated_mpc" );
+	mpc.printDimensionsQP( );
+	// ----------------------------------------------------------
     return 0;
 }
-/* <<< end tutorial code <<< */
-

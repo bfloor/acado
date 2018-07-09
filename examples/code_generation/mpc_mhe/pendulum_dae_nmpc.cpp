@@ -118,8 +118,8 @@ int main(int argc, char * const argv[ ])
 
 //	mpc.set(LEVENBERG_MARQUARDT, 1.0e-10);
 
-	mpc.set(GENERATE_TEST_FILE, NO);
-	mpc.set(GENERATE_MAKE_FILE, NO);
+	mpc.set(GENERATE_TEST_FILE, YES);
+	mpc.set(GENERATE_MAKE_FILE, YES);
 	mpc.set(GENERATE_MATLAB_INTERFACE, YES);
 
 //	mpc.set(USE_SINGLE_PRECISION, YES);
