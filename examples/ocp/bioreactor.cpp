@@ -32,6 +32,7 @@ s file is part of ACADO Toolkit.
 #include <acado_optimal_control.hpp>
 #include <acado_gnuplot.hpp>
 #include <acado_code_generation.hpp>
+#include <cmath>
 
 /* >>> start tutorial code >>> */
 int main( ){
@@ -58,9 +59,18 @@ int main( ){
     OnlineData wY_T;
     OnlineData wTheta_T;
 
+    OnlineData r_disc;
+    OnlineData disc_pos;
+
+    OnlineData obst1_x;
+    OnlineData obst1_y;
+    OnlineData obst1_theta;
+    OnlineData obst1_major;
+    OnlineData obst1_minor;
+
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
-    
+
     f << dot(x) == v*cos(theta);
     f << dot(y) == v*sin(theta);
     f << dot(theta) == w;
@@ -69,9 +79,9 @@ int main( ){
     // ----------------------------------
     OCP ocp( 0.0, 5.0, 50.0 );
 
-    ocp.setNOD(11);
+    ocp.setNOD(18);
 
-    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w );  // weight this with the physical cost!!!
+    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w );  // weigh this with the physical cost!!!
 
     ocp.minimizeMayerTerm(wX_T*(x-goal_x)*(x-goal_x)+ wY_T*(y-goal_y)*(y-goal_y)+ wTheta_T*(theta-goal_theta)*(theta-goal_theta));
     
@@ -83,6 +93,32 @@ ocp.subjectTo( f );
     // DEFINE COLLISION CONSTRAINTS:
     // ---------------------------------------
 
+    Expression ab(2,2);
+    ab(0,0) = 1/((obst1_major + r_disc)*(obst1_major + r_disc));
+    ab(0,1) = 0;
+    ab(1,1) = 1/((obst1_minor + r_disc)*(obst1_minor + r_disc));
+    ab(1,0) = 0;
+
+    Expression R_obst(2,2);
+    R_obst(0,0) = cos(obst1_theta);
+    R_obst(0,1) = -sin(obst1_theta);
+    R_obst(1,0) = sin(obst1_theta);
+    R_obst(1,1) = cos(obst1_theta);
+
+    Expression deltaPos_disc1(2,1);
+    deltaPos_disc1(0) =  x - cos(obst1_theta)*disc_pos - obst1_x;
+    deltaPos_disc1(1) =  y - sin(obst1_theta)*disc_pos - obst1_y;
+
+    Expression deltaPos_disc2(2,1);
+    deltaPos_disc2(0) = x + cos(obst1_theta)*disc_pos - obst1_x;
+    deltaPos_disc2(1) = y + sin(obst1_theta)*disc_pos - obst1_y;
+
+    Expression c_obst1_1, c_obst1_2;
+    c_obst1_1 = deltaPos_disc1.transpose() * R_obst.transpose() * ab * R_obst * deltaPos_disc1;
+    c_obst1_2 = deltaPos_disc2.transpose() * R_obst.transpose() * ab * R_obst * deltaPos_disc2;
+
+    ocp.subjectTo(c_obst1_1 >= 1);
+    ocp.subjectTo(c_obst1_2 >= 1);
 
 	// DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
