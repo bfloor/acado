@@ -54,6 +54,10 @@ int main( ){
     OnlineData wV;
     OnlineData wW;
 
+    OnlineData wX_T;
+    OnlineData wY_T;
+    OnlineData wTheta_T;
+
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
     
@@ -65,54 +69,20 @@ int main( ){
     // ----------------------------------
     OCP ocp( 0.0, 5.0, 50.0 );
 
-    // Need to set the number of online variables!
-    ocp.setNOD(8);
+    ocp.setNOD(11);
 
     ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w );  // weight this with the physical cost!!!
-    ocp.subjectTo( f );
 
-    //ocp.subjectTo( AT_START, x ==  2.0 );
-    //ocp.subjectTo( AT_START, y == 2.0 );
-    //ocp.subjectTo( AT_START, theta == 2.0 );
+    ocp.minimizeMayerTerm(wX_T*(x-goal_x)*(x-goal_x)+ wY_T*(y-goal_y)*(y-goal_y)+ wTheta_T*(theta-goal_theta)*(theta-goal_theta));
+    
+ocp.subjectTo( f );
 
     ocp.subjectTo( -1.0 <= v <= 1.0 );
     ocp.subjectTo( -1.0 <= w <= 1.0 );
 
+    // DEFINE COLLISION CONSTRAINTS:
+    // ---------------------------------------
 
-    // DEFINE A PLOT WINDOW:
-    // ---------------------
-//    GnuplotWindow window;
-  //      window.addSubplot( x ,"X"  );
-  //      window.addSubplot( y ,"Y"  );
-  //      window.addSubplot( theta ,"Theta"  );
-  //      window.addSubplot( v,"V" );
-
-
-    // DEFINE AN OPTIMIZATION ALGORITHM AND SOLVE THE OCP:
-    // ---------------------------------------------------
-	/*OptimizationAlgorithm algorithm(ocp);
-	//RealTimeAlgorithm algorithm(ocp);
-    algorithm.set( HESSIAN_APPROXIMATION, BLOCK_BFGS_UPDATE );
-	algorithm.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
-	algorithm.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
-	algorithm.set(PRINT_COPYRIGHT, false);                 // default true
-	algorithm.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING);
-	Grid t(0,5.0,50);
-	VariablesGrid s2(3,0,5.0,50),c2(2,0,5.0,50);
-	DVector state_ini(4);
-	state_ini.setAll(2.0);
-	state_ini(0)=0;
-    algorithm.initializeDifferentialStates(s2);
-    algorithm.initializeControls          (c2);
-    
-    algorithm.set( MAX_NUM_ITERATIONS, 100 );
-    algorithm.set( KKT_TOLERANCE, 1e-8 );
-    algorithm << window;
-    //algorithm.solve(0.0,state_ini);
-	algorithm.solve();
-    VariablesGrid s3,c3;
-    algorithm.getDifferentialStates(s3);
-    algorithm.getControls          (c3);*/
 
 	// DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
