@@ -40,19 +40,46 @@ int main( ){
 
     // INTRODUCE THE VARIABLES:
     // -------------------------
-    DifferentialState     x,y,theta;
+    DifferentialState     x,y,theta,s;
     Control               v,w   ;
     DifferentialEquation  f    ;
 
-    OnlineData goal_x;
-    OnlineData goal_y;
-    OnlineData goal_theta;
+    //OnlineData goal_x;
+    //OnlineData goal_y;
+    //OnlineData goal_theta;
 
-    OnlineData wX;
-    OnlineData wY;
-    OnlineData wTheta;
-    OnlineData wV;
-    OnlineData wW;
+    OnlineData a_X;
+    OnlineData b_X;
+    OnlineData c_X;
+    OnlineData d_X;
+	OnlineData a_Y;
+	OnlineData b_Y;
+	OnlineData c_Y;
+	OnlineData d_Y;
+
+	/*double a_X=0;
+	double b_X=0;
+	double c_X=1;
+	double d_X=0;
+	double a_Y=0;
+	double b_Y=0;
+	double c_Y=1;
+	double d_Y=0;*/
+
+	Expression x_path = (a_X*s.getPowInt(3) + b_X*s.getPowInt(2) + c_X*s + d_X) ;
+	Expression y_path = (a_Y*s.getPowInt(3) + b_Y*s.getPowInt(2) + c_Y*s + d_Y) ;
+	Expression dx_path = (3*a_X*s.getPowInt(2) + 2*b_X*s + c_X) ;
+	Expression dy_path = (3*a_Y*s.getPowInt(2) + 2*b_Y*s + c_Y) ;
+
+
+	//Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
+	//Expression dx_path_norm = dx_path/abs_grad;
+	//Expression dy_path_norm =  dy_path/abs_grad;
+	// Compute the errors
+	Expression theta_path = dy_path/dx_path;
+	theta_path = theta_path.getAtan();
+	Expression dx_path_norm = theta_path.getCos();
+	Expression dy_path_norm =  theta_path.getSin();
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -60,20 +87,27 @@ int main( ){
     f << dot(x) == v*cos(theta);
     f << dot(y) == v*sin(theta);
     f << dot(theta) == w;
+	f << dot(s) == v;
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
-    OCP ocp( 0.0, 5.0, 50.0 );
+    OCP ocp( 0.0, 2.5, 50.0 );
 
     // Need to set the number of online variables!
     ocp.setNOD(8);
 
-    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w );  // weight this with the physical cost!!!
+	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
+
+	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
+
+
+	ocp.minimizeLagrangeTerm(error_contour*error_contour + error_lag*error_lag + w*w -2*v);// weight this with the physical cost!!!
     ocp.subjectTo( f );
 
-    //ocp.subjectTo( AT_START, x ==  2.0 );
-    //ocp.subjectTo( AT_START, y == 2.0 );
-    //ocp.subjectTo( AT_START, theta == 2.0 );
+    ocp.subjectTo( AT_END, s ==  2.5 );
+    //ocp.subjectTo( AT_START, y == 0.0 );
+    //ocp.subjectTo( AT_START, theta == 0.0 );
+	//ocp.subjectTo( AT_START, s == 0.0 );
 
     ocp.subjectTo( -1.0 <= v <= 1.0 );
     ocp.subjectTo( -1.0 <= w <= 1.0 );
@@ -81,16 +115,16 @@ int main( ){
 
     // DEFINE A PLOT WINDOW:
     // ---------------------
-//    GnuplotWindow window;
-  //      window.addSubplot( x ,"X"  );
-  //      window.addSubplot( y ,"Y"  );
-  //      window.addSubplot( theta ,"Theta"  );
-  //      window.addSubplot( v,"V" );
+   /* GnuplotWindow window;
+        window.addSubplot( x ,"X"  );
+        window.addSubplot( y ,"Y"  );
+        window.addSubplot( theta ,"Theta"  );
+        window.addSubplot( s,"V" );
 
 
     // DEFINE AN OPTIMIZATION ALGORITHM AND SOLVE THE OCP:
     // ---------------------------------------------------
-	/*OptimizationAlgorithm algorithm(ocp);
+	OptimizationAlgorithm algorithm(ocp);
 	//RealTimeAlgorithm algorithm(ocp);
     algorithm.set( HESSIAN_APPROXIMATION, BLOCK_BFGS_UPDATE );
 	algorithm.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
@@ -98,10 +132,8 @@ int main( ){
 	algorithm.set(PRINT_COPYRIGHT, false);                 // default true
 	algorithm.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING);
 	Grid t(0,5.0,50);
-	VariablesGrid s2(3,0,5.0,50),c2(2,0,5.0,50);
-	DVector state_ini(4);
-	state_ini.setAll(2.0);
-	state_ini(0)=0;
+	VariablesGrid s2(4,0,5.0,50),c2(2,0,5.0,50);
+
     algorithm.initializeDifferentialStates(s2);
     algorithm.initializeControls          (c2);
     
@@ -121,7 +153,7 @@ int main( ){
 	mpc.set( HESSIAN_APPROXIMATION,       EXACT_HESSIAN  		);
 	mpc.set( DISCRETIZATION_TYPE,         MULTIPLE_SHOOTING 	);
 	mpc.set( INTEGRATOR_TYPE,             INT_RK4			);
-	mpc.set( NUM_INTEGRATOR_STEPS,        20            		);
+	mpc.set( NUM_INTEGRATOR_STEPS,        50            		);
 	mpc.set( QP_SOLVER,                   QP_QPOASES    		);
 	mpc.set( HOTSTART_QP,                 NO             		);
 	mpc.set( GENERATE_TEST_FILE,          YES            		);
