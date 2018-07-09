@@ -48,6 +48,12 @@ int main( ){
     OnlineData goal_y;
     OnlineData goal_theta;
 
+    OnlineData wX;
+    OnlineData wY;
+    OnlineData wTheta;
+    OnlineData wV;
+    OnlineData wW;
+
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
     
@@ -57,12 +63,12 @@ int main( ){
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
-    OCP ocp( 0.0, 3.0, 20.0 );
+    OCP ocp( 0.0, 5.0, 50.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(3);
+    ocp.setNOD(8);
 
-    ocp.minimizeLagrangeTerm( (x-goal_x)*(x-goal_x)+(y-goal_y)*(y-goal_y)+(theta-goal_theta)*(theta-goal_theta)+v*v+w*w );  // weight this with the physical cost!!!
+    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w );  // weight this with the physical cost!!!
     ocp.subjectTo( f );
 
     //ocp.subjectTo( AT_START, x ==  2.0 );
@@ -75,11 +81,11 @@ int main( ){
 
     // DEFINE A PLOT WINDOW:
     // ---------------------
-    GnuplotWindow window;
-        window.addSubplot( x ,"X"  );
-        window.addSubplot( y ,"Y"  );
-        window.addSubplot( theta ,"Theta"  );
-        window.addSubplot( v,"V" );
+//    GnuplotWindow window;
+  //      window.addSubplot( x ,"X"  );
+  //      window.addSubplot( y ,"Y"  );
+  //      window.addSubplot( theta ,"Theta"  );
+  //      window.addSubplot( v,"V" );
 
 
     // DEFINE AN OPTIMIZATION ALGORITHM AND SOLVE THE OCP:
@@ -115,7 +121,7 @@ int main( ){
 	mpc.set( HESSIAN_APPROXIMATION,       EXACT_HESSIAN  		);
 	mpc.set( DISCRETIZATION_TYPE,         MULTIPLE_SHOOTING 	);
 	mpc.set( INTEGRATOR_TYPE,             INT_RK4			);
-	mpc.set( NUM_INTEGRATOR_STEPS,        18            		);
+	mpc.set( NUM_INTEGRATOR_STEPS,        20            		);
 	mpc.set( QP_SOLVER,                   QP_QPOASES    		);
 	mpc.set( HOTSTART_QP,                 NO             		);
 	mpc.set( GENERATE_TEST_FILE,          YES            		);
