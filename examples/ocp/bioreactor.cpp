@@ -104,12 +104,12 @@ int main( ){
 	ocp.minimizeLagrangeTerm(error_contour*error_contour + error_lag*error_lag + w*w -2*v);// weight this with the physical cost!!!
     ocp.subjectTo( f );
 
-    ocp.subjectTo( AT_END, s ==  2.5 );
+    //ocp.subjectTo( AT_END, s ==  2.5 );
     //ocp.subjectTo( AT_START, y == 0.0 );
     //ocp.subjectTo( AT_START, theta == 0.0 );
 	//ocp.subjectTo( AT_START, s == 0.0 );
 
-    ocp.subjectTo( -1.0 <= v <= 1.0 );
+    ocp.subjectTo( 0 <= v <= 1.0 );
     ocp.subjectTo( -1.0 <= w <= 1.0 );
 
 
