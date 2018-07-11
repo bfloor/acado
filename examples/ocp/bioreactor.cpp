@@ -56,6 +56,11 @@ int main( ){
 	OnlineData b_Y;
 	OnlineData c_Y;
 	OnlineData d_Y;
+	OnlineData Wx;
+	OnlineData Wy;
+	OnlineData Wv;
+	OnlineData Ww;
+	OnlineData Ws;
 
 	/*double a_X=0;
 	double b_X=0;
@@ -101,8 +106,9 @@ int main( ){
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
 
-	ocp.minimizeLagrangeTerm(error_contour*error_contour + error_lag*error_lag + w*w -2*v);// weight this with the physical cost!!!
-    ocp.subjectTo( f );
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w -Wv*v);// weight this with the physical cost!!!
+    //ocp.subjectTo( f );
+	ocp.setModel(f);
 
     //ocp.subjectTo( AT_END, s ==  2.5 );
     //ocp.subjectTo( AT_START, y == 0.0 );
