@@ -139,6 +139,7 @@ int main( )
 	if (controller.step( 0.0,y ) != SUCCESSFUL_RETURN)
 		exit( 1 );
 
+	window.plot();
     return EXIT_SUCCESS;
 }
 

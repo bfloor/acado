@@ -43,13 +43,8 @@ int main( ){
 
     // VARIABLES:
     // ------------------------
-    DifferentialState        x;   // Position of the trolley
-    DifferentialState        v;   // Velocity of the trolley
-    DifferentialState      phi;   // excitation angle
-    DifferentialState     dphi;   // rotational velocity
-
-	Control 				ax;   // trolley accelaration
-	Disturbance 			 W;   // disturbance
+    DifferentialState        x,y,theta;   // Position of the trolley
+	Control 				v,w;   // trolley accelaration
 
     double L = 1.0 ;              // length
 	double m = 1.0 ;              // mass
@@ -61,17 +56,15 @@ int main( ){
     // ------------------------
     DifferentialEquation     f, fSim;   // The model equations
 
-    f << dot(x) ==  v;
-    f << dot(v) ==  ax;
-    f << dot(phi ) == dphi;
-    f << dot(dphi) == -g/L*sin(phi) -ax/L*cos(phi) - b/(m*L*L)*dphi;
+    f << dot(x) ==  v*cos(theta);
+	f << dot(y) ==  v*sin(theta);
+    f << dot(theta) ==  w;
 
 	L = 1.2;							// introduce model plant mismatch
 	
-	fSim << dot(x) ==  v;
-	fSim << dot(v) ==  ax + W;
-	fSim << dot(phi ) == dphi;
-	fSim << dot(dphi) == -g/L*sin(phi) -ax/L*cos(phi) - b/(m*L*L)*dphi;
+	fSim << dot(x) ==  v*cos(theta);;
+	fSim << dot(y) ==  v*sin(theta);
+	fSim << dot(theta) ==  w;
 	
 
     // DEFINE LEAST SQUARE FUNCTION:
@@ -79,15 +72,16 @@ int main( ){
     Function h;
 
     h << x;
-    h << v;
-    h << phi;
-    h << dphi;
+    h << y;
+    h << theta;
+	h << w;
 
     DMatrix Q(4,4); // LSQ coefficient matrix
     Q.setIdentity();
-
+	Q(1,1)=10;
     DVector r(4); // Reference
-
+	r(0)=1;
+	r(1)=1;
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
@@ -98,7 +92,43 @@ int main( ){
 
     ocp.minimizeLSQ( Q, h, r );
     ocp.subjectTo( f );
-    ocp.subjectTo( -5.0 <= ax <= 5.0 );
+    ocp.subjectTo( -1.0 <= w <= 1.0 );
+	ocp.subjectTo( 0.0 <= v <= 1.0 );
+
+	//Collision avoidance constraints
+	double obst1_major = 0.2;
+	double obst1_minor = 0.2;
+	double r_disc =0.5;
+	double obst1_theta = 0;
+	double obst1_x=0.5;
+	double obst1_y =0;
+	Expression ab(2,2);
+	ab(0,0) = 1/((obst1_major + r_disc)*(obst1_major + r_disc));
+	ab(0,1) = 0;
+	ab(1,1) = 1/((obst1_minor + r_disc)*(obst1_minor + r_disc));
+	ab(1,0) = 0;
+
+	Expression R_obst(2,2);
+	R_obst(0,0) = cos(obst1_theta);
+	R_obst(0,1) = -sin(obst1_theta);
+	R_obst(1,0) = sin(obst1_theta);
+	R_obst(1,1) = cos(obst1_theta);
+
+	Expression deltaPos_disc1(2,1);
+	deltaPos_disc1(0) =  x - obst1_x;// - cos(obst1_theta)*disc_pos;
+	deltaPos_disc1(1) =  y - obst1_y;// - sin(obst1_theta)*disc_pos;
+
+//    Expression deltaPos_disc2(2,1);
+//    deltaPos_disc2(0) = x - obst1_x + cos(obst1_theta)*disc_pos;
+//    deltaPos_disc2(1) = y - obst1_y + sin(obst1_theta)*disc_pos;
+
+	Expression c_obst1_1;
+	c_obst1_1 = deltaPos_disc1.transpose() * R_obst.transpose() * ab * R_obst * deltaPos_disc1;
+//    c_obst1_2 = deltaPos_disc2.transpose() * R_obst.transpose() * ab * R_obst * deltaPos_disc2;
+
+//    c_obst1_1 = ((cos(obst1_theta)*(cos(obst1_theta)*(obst1_x - x + disc_pos*cos(obst1_theta)) - sin(obst1_theta)*(obst1_y - y + disc_pos*sin(obst1_theta))))/((obst1_major + r_disc)*(obst1_major + r_disc)) + (sin(obst1_theta)*(sin(obst1_theta)*(obst1_x - x + disc_pos*cos(obst1_theta)) + cos(obst1_theta)*(obst1_y - y + disc_pos*sin(obst1_theta))))/((obst1_minor + r_disc)*(obst1_minor + r_disc)))*(obst1_x - x + disc_pos*cos(obst1_theta)) + ((cos(obst1_theta)*(sin(obst1_theta)*(obst1_x - x + disc_pos*cos(obst1_theta)) + cos(obst1_theta)*(obst1_y - y + disc_pos*sin(obst1_theta))))/((obst1_minor + r_disc)*(obst1_minor + r_disc)) - (sin(obst1_theta)*(cos(obst1_theta)*(obst1_x - x + disc_pos*cos(obst1_theta)) - sin(obst1_theta)*(obst1_y - y + disc_pos*sin(obst1_theta))))/((obst1_major + r_disc)*(obst1_major + r_disc)))*(obst1_y - y + disc_pos*sin(obst1_theta));
+
+	ocp.subjectTo(c_obst1_1 >= 1);
 
 
     // SETTING UP THE (SIMULATED) PROCESS:
@@ -108,9 +138,9 @@ int main( ){
 
 	Process process( dynamicSystem,INT_RK45 );
 
-	VariablesGrid disturbance; disturbance.read( "dist.txt" );
-	if (process.setProcessDisturbance( disturbance ) != SUCCESSFUL_RETURN)
-		exit( EXIT_FAILURE );
+	//VariablesGrid disturbance; disturbance.read( "dist.txt" );
+	//if (process.setProcessDisturbance( disturbance ) != SUCCESSFUL_RETURN)
+	//	exit( EXIT_FAILURE );
 
     // SETTING UP THE MPC CONTROLLER:
     // ------------------------------
@@ -118,8 +148,14 @@ int main( ){
 	RealTimeAlgorithm alg( ocp,0.1 );
 //  	alg.set( USE_REALTIME_ITERATIONS,NO );
 //  	alg.set( MAX_NUM_ITERATIONS,20 );
+	VariablesGrid traj(4,t_start,t_end,25);
 
-	StaticReferenceTrajectory zeroReference;
+	for(int i=0;i<25;i++){
+		traj(i,0)=2;
+		traj(i,1)=2;
+	}
+
+	StaticReferenceTrajectory zeroReference(traj);
 
 	Controller controller( alg,zeroReference );
 	
@@ -128,9 +164,9 @@ int main( ){
     // ----------------------------------------------------------
 	SimulationEnvironment sim( 0.0,20.0,process,controller );
 
-	DVector x0(4);
+	DVector x0(3);
 	x0.setZero();
-	x0(3) = 5.0;
+	x0(0) = 0.0;
 
 	if (sim.init( x0 ) != SUCCESSFUL_RETURN)
 		exit( EXIT_FAILURE );
@@ -148,15 +184,12 @@ int main( ){
 		exit( EXIT_FAILURE );
 
 	GnuplotWindow window;
-		window.addSubplot( diffStates(0),   "POSITION OF THE TROLLEY" );
-		window.addSubplot( diffStates(1),   "VELOCITY OF THE TROLLEY" );
-		window.addSubplot( diffStates(2),   "PHI" );
-		window.addSubplot( diffStates(3),   "DPHI" );
-		window.addSubplot( feedbackControl, "Accelaration [m/s^2]" );
-	//	window.addSubplot( disturbance,     "Disturbance [m/s^2]" );
+		window.addSubplot( diffStates(0),   "X-POSITION" );
+		window.addSubplot( diffStates(1),   "Y-POSITION" );
+		window.addSubplot( diffStates(2),   "THETA" );
+		window.addSubplot( feedbackControl(0), "Veclocity [m/s]" );
+		window.addSubplot( feedbackControl(1), "Veclocity [rad/s]" );
 	window.plot();
-	
-	diffStates.print( "diffStates.txt" );
 
 
     return EXIT_SUCCESS;
