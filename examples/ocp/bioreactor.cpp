@@ -60,11 +60,10 @@ int main( ){
     OnlineData wTheta_T;
 
     OnlineData ws;
+    OnlineData wP;
 
     OnlineData r_disc;
     OnlineData disc_pos;
-
-    OnlineData obst_bound;
 
     OnlineData obst1_x;
     OnlineData obst1_y;
@@ -92,7 +91,7 @@ int main( ){
 
     ocp.setNOD(25);
 
-    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w + ws*sv*sv );  // weigh this with the physical cost!!!
+    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w + ws*sv*sv + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001))));  // weigh this with the physical cost!!!
 
     ocp.minimizeMayerTerm(wX_T*(x-goal_x)*(x-goal_x)+ wY_T*(y-goal_y)*(y-goal_y)+ wTheta_T*(theta-goal_theta)*(theta-goal_theta));
     
@@ -104,27 +103,17 @@ int main( ){
     // DEFINE COLLISION CONSTRAINTS:
     // ---------------------------------------
 
-    Expression ab_1(2,2), ab_1_inflate(2,2);
+    Expression ab_1(2,2);
     ab_1(0,0) = 1/((obst1_major + r_disc)*(obst1_major + r_disc));
     ab_1(0,1) = 0;
     ab_1(1,1) = 1/((obst1_minor + r_disc)*(obst1_minor + r_disc));
     ab_1(1,0) = 0;
 
-    ab_1_inflate(0,0) = 1/((obst1_major + r_disc + obst_bound)*(obst1_major + r_disc + obst_bound));
-    ab_1_inflate(0,1) = 0;
-    ab_1_inflate(1,1) = 1/((obst1_minor + r_disc + obst_bound)*(obst1_minor + r_disc + obst_bound));
-    ab_1_inflate(1,0) = 0;
-
-    Expression ab_2, ab_2_inflate(2,2);
+    Expression ab_2(2,2);
     ab_2(0,0) = 1/((obst2_major + r_disc)*(obst2_major + r_disc));
     ab_2(0,1) = 0;
     ab_2(1,1) = 1/((obst2_minor + r_disc)*(obst2_minor + r_disc));
     ab_2(1,0) = 0;
-
-    ab_2_inflate(0,0) = 1/((obst2_major + r_disc + obst_bound)*(obst2_major + r_disc + obst_bound));
-    ab_2_inflate(0,1) = 0;
-    ab_2_inflate(1,1) = 1/((obst2_minor + r_disc + obst_bound)*(obst2_minor + r_disc + obst_bound));
-    ab_2_inflate(1,0) = 0;
 
     Expression R_obst_1(2,2);
     R_obst_1(0,0) = cos(obst1_theta);
@@ -146,18 +135,12 @@ int main( ){
     deltaPos_disc_2(0) =  x - obst2_x;
     deltaPos_disc_2(1) =  y - obst2_y;
 
-    Expression c_obst_1, c_obst_2, c_obst_1_inflate, c_obst_2_inflate;
+    Expression c_obst_1, c_obst_2;
     c_obst_1 = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1 * R_obst_1 * deltaPos_disc_1;
     c_obst_2 = deltaPos_disc_2.transpose() * R_obst_2.transpose() * ab_2 * R_obst_2 * deltaPos_disc_2;
 
-    c_obst_1_inflate = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1_inflate * R_obst_1 * deltaPos_disc_1;
-    c_obst_2_inflate = deltaPos_disc_2.transpose() * R_obst_2.transpose() * ab_2_inflate * R_obst_2 * deltaPos_disc_2;
-
-    ocp.subjectTo(c_obst_1 >= 1);
-    ocp.subjectTo(c_obst_2 >= 1);
-
-    ocp.subjectTo(c_obst_1_inflate - sv >= 1);
-    ocp.subjectTo(c_obst_2_inflate - sv >= 1);
+    ocp.subjectTo(c_obst_1 - sv >= 1);
+    ocp.subjectTo(c_obst_2 - sv >= 1);
 
     // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
