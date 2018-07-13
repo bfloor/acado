@@ -64,11 +64,19 @@ int main( ){
     OnlineData r_disc;
     OnlineData disc_pos;
 
+    OnlineData obst_bound;
+
     OnlineData obst1_x;
     OnlineData obst1_y;
     OnlineData obst1_theta;
     OnlineData obst1_major;
     OnlineData obst1_minor;
+
+    OnlineData obst2_x;
+    OnlineData obst2_y;
+    OnlineData obst2_theta;
+    OnlineData obst2_major;
+    OnlineData obst2_minor;
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -82,7 +90,7 @@ int main( ){
     // ----------------------------------
     OCP ocp( 0.0, 2.5, 50.0 );
 
-    ocp.setNOD(19);
+    ocp.setNOD(25);
 
     ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w + ws*sv*sv );  // weigh this with the physical cost!!!
 
@@ -90,52 +98,79 @@ int main( ){
     
     ocp.subjectTo( f );
 
-    ocp.subjectTo( -1.0 <= v <= 1.0 );
-    ocp.subjectTo( -1.0 <= w <= 1.0 );
+    ocp.subjectTo( -0.5 <= v <= 0.5 );
+    ocp.subjectTo( -0.5 <= w <= 0.5 );
 
     // DEFINE COLLISION CONSTRAINTS:
     // ---------------------------------------
 
-    Expression ab(2,2);
-    ab(0,0) = 1/((obst1_major + r_disc)*(obst1_major + r_disc));
-    ab(0,1) = 0;
-    ab(1,1) = 1/((obst1_minor + r_disc)*(obst1_minor + r_disc));
-    ab(1,0) = 0;
+    Expression ab_1(2,2), ab_1_inflate(2,2);
+    ab_1(0,0) = 1/((obst1_major + r_disc)*(obst1_major + r_disc));
+    ab_1(0,1) = 0;
+    ab_1(1,1) = 1/((obst1_minor + r_disc)*(obst1_minor + r_disc));
+    ab_1(1,0) = 0;
 
-    Expression R_obst(2,2);
-    R_obst(0,0) = cos(obst1_theta);
-    R_obst(0,1) = -sin(obst1_theta);
-    R_obst(1,0) = sin(obst1_theta);
-    R_obst(1,1) = cos(obst1_theta);
+    ab_1_inflate(0,0) = 1/((obst1_major + r_disc + obst_bound)*(obst1_major + r_disc + obst_bound));
+    ab_1_inflate(0,1) = 0;
+    ab_1_inflate(1,1) = 1/((obst1_minor + r_disc + obst_bound)*(obst1_minor + r_disc + obst_bound));
+    ab_1_inflate(1,0) = 0;
 
-    Expression deltaPos_disc1(2,1);
-    deltaPos_disc1(0) =  x - obst1_x;// - cos(obst1_theta)*disc_pos;
-    deltaPos_disc1(1) =  y - obst1_y;// - sin(obst1_theta)*disc_pos;
+    Expression ab_2, ab_2_inflate(2,2);
+    ab_2(0,0) = 1/((obst2_major + r_disc)*(obst2_major + r_disc));
+    ab_2(0,1) = 0;
+    ab_2(1,1) = 1/((obst2_minor + r_disc)*(obst2_minor + r_disc));
+    ab_2(1,0) = 0;
 
-//    Expression deltaPos_disc2(2,1);
-//    deltaPos_disc2(0) = x - obst1_x + cos(obst1_theta)*disc_pos;
-//    deltaPos_disc2(1) = y - obst1_y + sin(obst1_theta)*disc_pos;
+    ab_2_inflate(0,0) = 1/((obst2_major + r_disc + obst_bound)*(obst2_major + r_disc + obst_bound));
+    ab_2_inflate(0,1) = 0;
+    ab_2_inflate(1,1) = 1/((obst2_minor + r_disc + obst_bound)*(obst2_minor + r_disc + obst_bound));
+    ab_2_inflate(1,0) = 0;
 
-    Expression c_obst1_1, c_obst1_2;
-    c_obst1_1 = deltaPos_disc1.transpose() * R_obst.transpose() * ab * R_obst * deltaPos_disc1;
-//    c_obst1_2 = deltaPos_disc2.transpose() * R_obst.transpose() * ab * R_obst * deltaPos_disc2;
+    Expression R_obst_1(2,2);
+    R_obst_1(0,0) = cos(obst1_theta);
+    R_obst_1(0,1) = -sin(obst1_theta);
+    R_obst_1(1,0) = sin(obst1_theta);
+    R_obst_1(1,1) = cos(obst1_theta);
 
-//    c_obst1_1 = ((cos(obst1_theta)*(cos(obst1_theta)*(obst1_x - x + disc_pos*cos(obst1_theta)) - sin(obst1_theta)*(obst1_y - y + disc_pos*sin(obst1_theta))))/((obst1_major + r_disc)*(obst1_major + r_disc)) + (sin(obst1_theta)*(sin(obst1_theta)*(obst1_x - x + disc_pos*cos(obst1_theta)) + cos(obst1_theta)*(obst1_y - y + disc_pos*sin(obst1_theta))))/((obst1_minor + r_disc)*(obst1_minor + r_disc)))*(obst1_x - x + disc_pos*cos(obst1_theta)) + ((cos(obst1_theta)*(sin(obst1_theta)*(obst1_x - x + disc_pos*cos(obst1_theta)) + cos(obst1_theta)*(obst1_y - y + disc_pos*sin(obst1_theta))))/((obst1_minor + r_disc)*(obst1_minor + r_disc)) - (sin(obst1_theta)*(cos(obst1_theta)*(obst1_x - x + disc_pos*cos(obst1_theta)) - sin(obst1_theta)*(obst1_y - y + disc_pos*sin(obst1_theta))))/((obst1_major + r_disc)*(obst1_major + r_disc)))*(obst1_y - y + disc_pos*sin(obst1_theta));
+    Expression R_obst_2(2,2);
+    R_obst_2(0,0) = cos(obst2_theta);
+    R_obst_2(0,1) = -sin(obst2_theta);
+    R_obst_2(1,0) = sin(obst2_theta);
+    R_obst_2(1,1) = cos(obst2_theta);
 
-    ocp.subjectTo(c_obst1_1 - sv >= 1);
-//    ocp.subjectTo(c_obst1_2 >= 1);
+    Expression deltaPos_disc_1(2,1);
+    deltaPos_disc_1(0) =  x - obst1_x;
+    deltaPos_disc_1(1) =  y - obst1_y;
 
-	// DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
+    Expression deltaPos_disc_2(2,1);
+    deltaPos_disc_2(0) =  x - obst2_x;
+    deltaPos_disc_2(1) =  y - obst2_y;
+
+    Expression c_obst_1, c_obst_2, c_obst_1_inflate, c_obst_2_inflate;
+    c_obst_1 = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1 * R_obst_1 * deltaPos_disc_1;
+    c_obst_2 = deltaPos_disc_2.transpose() * R_obst_2.transpose() * ab_2 * R_obst_2 * deltaPos_disc_2;
+
+    c_obst_1_inflate = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1_inflate * R_obst_1 * deltaPos_disc_1;
+    c_obst_2_inflate = deltaPos_disc_2.transpose() * R_obst_2.transpose() * ab_2_inflate * R_obst_2 * deltaPos_disc_2;
+
+    ocp.subjectTo(c_obst_1 >= 1);
+    ocp.subjectTo(c_obst_2 >= 1);
+
+    ocp.subjectTo(c_obst_1_inflate - sv >= 1);
+    ocp.subjectTo(c_obst_2_inflate - sv >= 1);
+
+    // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
 	OCPexport mpc( ocp );
 
 	mpc.set( HESSIAN_APPROXIMATION,       EXACT_HESSIAN  		);
     mpc.set( DISCRETIZATION_TYPE,         MULTIPLE_SHOOTING 	);
-	mpc.set( INTEGRATOR_TYPE,             INT_RK4			    );
-//    mpc.set( INTEGRATOR_TYPE,             INT_IRK_GL4			);
+//	mpc.set( INTEGRATOR_TYPE,             INT_RK4			    );
+    mpc.set( INTEGRATOR_TYPE,             INT_IRK_GL4			);
+//    mpc.set( INTEGRATOR_TYPE,             INT_IRK_RIIA3			);
 	mpc.set( NUM_INTEGRATOR_STEPS,        50            		);
 	mpc.set( QP_SOLVER,                   QP_QPOASES    		);
-	mpc.set( HOTSTART_QP,                 NO             		);
+	mpc.set( HOTSTART_QP,                 YES             		);
 	mpc.set( GENERATE_TEST_FILE,          YES            		);
 	mpc.set( GENERATE_MAKE_FILE,          YES            		);
 	mpc.set( GENERATE_MATLAB_INTERFACE,   NO            		);
