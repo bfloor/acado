@@ -49,19 +49,19 @@ int main( ){
     //OnlineData goal_theta;
 
 
-	double a_X=0;
-	double b_X=0;
-	double c_X=8;
-	double d_X=0;
-	double a_Y=0;
-	double b_Y=0;
-	double c_Y=8;
-	double d_Y=0;
-	double Wx =1;
-	double Wy =1;
-	double Wv =1;
-	double Ww =1;
-	double Ws =1;
+	OnlineData a_X;
+	OnlineData b_X;
+	OnlineData c_X;
+	OnlineData d_X;
+	OnlineData a_Y;
+	OnlineData b_Y;
+	OnlineData c_Y;
+	OnlineData d_Y;
+	OnlineData Wx;
+	OnlineData Wy;
+	OnlineData Wv;
+	OnlineData Ww;
+	OnlineData Ws;
 
 	Expression x_path = (a_X*s.getPowInt(3) + b_X*s.getPowInt(2) + c_X*s + d_X) ;
 	Expression y_path = (a_Y*s.getPowInt(3) + b_Y*s.getPowInt(2) + c_Y*s + d_Y) ;
@@ -69,14 +69,14 @@ int main( ){
 	Expression dy_path = (3*a_Y*s.getPowInt(2) + 2*b_Y*s + c_Y) ;
 
 
-	//Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
-	//Expression dx_path_norm = dx_path/abs_grad;
-	//Expression dy_path_norm =  dy_path/abs_grad;
+	Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
+	Expression dx_path_norm = dx_path/abs_grad;
+	Expression dy_path_norm =  dy_path/abs_grad;
 	// Compute the errors
-	Expression theta_path = dy_path/dx_path;
-	theta_path = theta_path.getAtan();
-	Expression dx_path_norm = theta_path.getCos();
-	Expression dy_path_norm =  theta_path.getSin();
+	//Expression theta_path = dy_path/dx_path;
+	//theta_path = theta_path.getAtan();
+	//Expression dx_path_norm = theta_path.getCos();
+	//Expression dy_path_norm =  theta_path.getSin();
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -113,7 +113,7 @@ int main( ){
 
     // DEFINE A PLOT WINDOW:
     // ---------------------
-    GnuplotWindow window;
+    /*GnuplotWindow window;
         window.addSubplot( x ,"X"  );
         window.addSubplot( y ,"Y"  );
         window.addSubplot( theta ,"Theta"  );
@@ -173,7 +173,29 @@ int main( ){
 	VariablesGrid differentialStates;
 	integrator.getX( differentialStates );
 
-	differentialStates.print( "x" );
+	differentialStates.print( "x" );*/
+
+	// DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
+	// ----------------------------------------------------------
+	OCPexport mpc( ocp );
+
+	mpc.set( HESSIAN_APPROXIMATION,       EXACT_HESSIAN  		);
+	mpc.set( DISCRETIZATION_TYPE,         MULTIPLE_SHOOTING 	);
+	mpc.set( INTEGRATOR_TYPE,             INT_RK4			);
+	mpc.set( NUM_INTEGRATOR_STEPS,        50            		);
+	mpc.set( QP_SOLVER,                   QP_QPOASES    		);
+	mpc.set( HOTSTART_QP,                 NO             		);
+	mpc.set( GENERATE_TEST_FILE,          YES            		);
+	mpc.set( GENERATE_MAKE_FILE,          YES            		);
+	mpc.set( GENERATE_MATLAB_INTERFACE,   NO            		);
+	mpc.set( SPARSE_QP_SOLUTION, 		  FULL_CONDENSING_N2	);
+	mpc.set( DYNAMIC_SENSITIVITY, 		  SYMMETRIC				);
+	mpc.set( CG_HARDCODE_CONSTRAINT_VALUES, NO 					);
+	mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES 				);
+
+	mpc.exportCode( "generated_mpc" );
+	mpc.printDimensionsQP( );
+	// ----------------------------------------------------------
 
 
     return 0;
