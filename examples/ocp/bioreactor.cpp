@@ -87,7 +87,7 @@ int main( ){
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
-    OCP ocp( 0.0, 2.5, 50.0 );
+    OCP ocp( 0.0, 10, 25.0 );
 
     ocp.setNOD(25);
 
@@ -139,8 +139,11 @@ int main( ){
     c_obst_1 = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1 * R_obst_1 * deltaPos_disc_1;
     c_obst_2 = deltaPos_disc_2.transpose() * R_obst_2.transpose() * ab_2 * R_obst_2 * deltaPos_disc_2;
 
-    ocp.subjectTo(c_obst_1 - sv >= 1);
-    ocp.subjectTo(c_obst_2 - sv >= 1);
+//    ocp.subjectTo(c_obst_1 - sv >= 1);
+//    ocp.subjectTo(c_obst_2 - sv >= 1);
+
+    ocp.subjectTo(c_obst_1 >= 1);
+    ocp.subjectTo(c_obst_2 >= 1);
 
     // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
@@ -151,7 +154,7 @@ int main( ){
 //	mpc.set( INTEGRATOR_TYPE,             INT_RK4			    );
     mpc.set( INTEGRATOR_TYPE,             INT_IRK_GL4			);
 //    mpc.set( INTEGRATOR_TYPE,             INT_IRK_RIIA3			);
-	mpc.set( NUM_INTEGRATOR_STEPS,        50            		);
+	mpc.set( NUM_INTEGRATOR_STEPS,        25            		);
 	mpc.set( QP_SOLVER,                   QP_QPOASES    		);
 	mpc.set( HOTSTART_QP,                 YES             		);
 	mpc.set( GENERATE_TEST_FILE,          YES            		);
