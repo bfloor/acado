@@ -88,7 +88,7 @@ int main( ){
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
-    OCP ocp( 0.0, 2.5, 50.0 );
+    OCP ocp( 0.0, 10.0, 25.0 );
 
     // Need to set the number of online variables!
     ocp.setNOD(13);
@@ -98,7 +98,7 @@ int main( ){
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
 
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-0.1)*(v-0.1));// weight this with the physical cost!!!
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-0.5)*(v-0.5));// weight this with the physical cost!!!
     //ocp.subjectTo( f );
 	ocp.setModel(f);
 
@@ -182,7 +182,7 @@ int main( ){
 	mpc.set( HESSIAN_APPROXIMATION,       EXACT_HESSIAN  		);
 	mpc.set( DISCRETIZATION_TYPE,         MULTIPLE_SHOOTING 	);
 	mpc.set( INTEGRATOR_TYPE,             INT_RK4			);
-	mpc.set( NUM_INTEGRATOR_STEPS,        50            		);
+	mpc.set( NUM_INTEGRATOR_STEPS,        25            		);
 	mpc.set( QP_SOLVER,                   QP_QPOASES    		);
 	mpc.set( HOTSTART_QP,                 NO             		);
 	mpc.set( GENERATE_TEST_FILE,          YES            		);
