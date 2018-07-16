@@ -98,7 +98,7 @@ int main( ){
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
 
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-0.5)*(v-0.5));// weight this with the physical cost!!!
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-1)*(v-1));// weight this with the physical cost!!!
     //ocp.subjectTo( f );
 	ocp.setModel(f);
 
