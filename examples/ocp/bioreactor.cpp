@@ -61,12 +61,12 @@ int main( ){
 	OnlineData Wy;
 	OnlineData Wv;
 	OnlineData Ww;
-	OnlineData Ws;
+	OnlineData ws;
 
-	Expression x_path = (a_X*s.getPowInt(3) + b_X*s.getPowInt(2) + c_X*s + d_X) ;
-	Expression y_path = (a_Y*s.getPowInt(3) + b_Y*s.getPowInt(2) + c_Y*s + d_Y) ;
-	Expression dx_path = (3*a_X*s.getPowInt(2) + 2*b_X*s + c_X) ;
-	Expression dy_path = (3*a_Y*s.getPowInt(2) + 2*b_Y*s + c_Y) ;
+	Expression x_path = (a_X*(s-ws)*(s-ws)*(s-ws) + b_X*(s-ws)*(s-ws) + c_X*(s-ws) + d_X) ;
+	Expression y_path = (a_Y*(s-ws)*(s-ws)*(s-ws) + b_Y*(s-ws)*(s-ws) + c_Y*(s-ws) + d_Y) ;
+	Expression dx_path = (3*a_X*(s-ws)*(s-ws) + 2*b_X*(s-ws) + c_X) ;
+	Expression dy_path = (3*a_Y*(s-ws)*(s-ws) + 2*b_Y*(s-ws) + c_Y) ;
 
 
 	Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
@@ -84,11 +84,11 @@ int main( ){
     f << dot(x) == v*cos(theta);
     f << dot(y) == v*sin(theta);
     f << dot(theta) == w;
-	f << dot(s) == v*0.4;
+	f << dot(s) == v;
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
-    OCP ocp( 0.0, 10.0, 25.0 );
+    OCP ocp( 0.0, 5.0, 25.0 );
 
     // Need to set the number of online variables!
     ocp.setNOD(13);
@@ -98,7 +98,7 @@ int main( ){
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
 
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-0.5)*(v-0.5));// weight this with the physical cost!!!
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-0.2)*(v-0.2));// weight this with the physical cost!!!
     //ocp.subjectTo( f );
 	ocp.setModel(f);
 
@@ -107,7 +107,7 @@ int main( ){
     //ocp.subjectTo( AT_START, theta == 0.0 );
 	//ocp.subjectTo( AT_START, s == 0.0 );
 
-    ocp.subjectTo( 0 <= v <= 1.0 );
+    ocp.subjectTo( -1 <= v <= 1.0 );
     ocp.subjectTo( -1.0 <= w <= 1.0 );
 
 
