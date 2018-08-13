@@ -41,7 +41,7 @@ int main( ){
 
     // INTRODUCE THE VARIABLES:
     // -------------------------
-    DifferentialState     x,y,theta, dummy;
+    DifferentialState     x,y,theta, dummy, x_obst1, y_obst1, x_obst2, y_obst2;
     Control               v,w, sv;
     DifferentialEquation  f    ;
 
@@ -70,12 +70,16 @@ int main( ){
     OnlineData obst1_theta;
     OnlineData obst1_major;
     OnlineData obst1_minor;
+    OnlineData obst1_vx;
+    OnlineData obst1_vy;
 
     OnlineData obst2_x;
     OnlineData obst2_y;
     OnlineData obst2_theta;
     OnlineData obst2_major;
     OnlineData obst2_minor;
+    OnlineData obst2_vx;
+    OnlineData obst2_vy;
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -84,14 +88,18 @@ int main( ){
     f << dot(y) == v*sin(theta);
     f << dot(theta) == w;
     f << dot(dummy) == sv;
+    f << dot(x_obst1) == obst1_vx;
+    f << dot(y_obst1) == obst1_vy;
+    f << dot(x_obst2) == obst2_vx;
+    f << dot(y_obst2) == obst2_vy;
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
     OCP ocp( 0.0, 10, 25.0 );
 
-    ocp.setNOD(25);
+    ocp.setNOD(29);
 
-    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w + ws*sv*sv + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001))));  // weigh this with the physical cost!!!
+    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w + ws*sv*sv + wP*((1/((x-x_obst1)*(x-x_obst1)+(y-y_obst1)*(y-y_obst1)+0.0001)) + (1/((x-x_obst2)*(x-x_obst2)+(y-y_obst2)*(y-y_obst2)+0.0001))));  // weigh this with the physical cost!!!
 //    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w + ws*sv*sv + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001))));  // weigh this with the physical cost!!!
 
     ocp.minimizeMayerTerm(wX_T*(x-goal_x)*(x-goal_x)+ wY_T*(y-goal_y)*(y-goal_y)+ wTheta_T*(theta-goal_theta)*(theta-goal_theta));
@@ -129,12 +137,12 @@ int main( ){
     R_obst_2(1,1) = cos(obst2_theta);
 
     Expression deltaPos_disc_1(2,1);
-    deltaPos_disc_1(0) =  x - obst1_x;
-    deltaPos_disc_1(1) =  y - obst1_y;
+    deltaPos_disc_1(0) =  x - x_obst1;
+    deltaPos_disc_1(1) =  y - y_obst1;
 
     Expression deltaPos_disc_2(2,1);
-    deltaPos_disc_2(0) =  x - obst2_x;
-    deltaPos_disc_2(1) =  y - obst2_y;
+    deltaPos_disc_2(0) =  x - x_obst2;
+    deltaPos_disc_2(1) =  y - y_obst2;
 
     Expression c_obst_1, c_obst_2;
     c_obst_1 = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1 * R_obst_1 * deltaPos_disc_1;
