@@ -72,22 +72,22 @@ int main( ){
 	OnlineData Wv;
 	OnlineData Ww;
 
-	OnlineData ws1;
-	OnlineData ws2;
-
+	OnlineData s01;
+	OnlineData s02;
+	OnlineData vref;
 	OnlineData delta;
 
 	Expression lambda = 1/(1 + exp((s - delta)/0.01));
 
-	Expression x_path1 = (a_X1*(s-ws1)*(s-ws1)*(s-ws1) + b_X1*(s-ws1)*(s-ws1) + c_X1*(s-ws1) + d_X1) ;
-	Expression y_path1 = (a_Y1*(s-ws1)*(s-ws1)*(s-ws1) + b_Y1*(s-ws1)*(s-ws1) + c_Y1*(s-ws1) + d_Y1) ;
-	Expression dx_path1 = (3*a_X1*(s-ws1)*(s-ws1) + 2*b_X1*(s-ws1) + c_X1) ;
-	Expression dy_path1 = (3*a_Y1*(s-ws1)*(s-ws1) + 2*b_Y1*(s-ws1) + c_Y1) ;
+	Expression x_path1 = (a_X1*(s-s01)*(s-s01)*(s-s01) + b_X1*(s-s01)*(s-s01) + c_X1*(s-s01) + d_X1) ;
+	Expression y_path1 = (a_Y1*(s-s01)*(s-s01)*(s-s01) + b_Y1*(s-s01)*(s-s01) + c_Y1*(s-s01) + d_Y1) ;
+	Expression dx_path1 = (3*a_X1*(s-s01)*(s-s01) + 2*b_X1*(s-s01) + c_X1) ;
+	Expression dy_path1 = (3*a_Y1*(s-s01)*(s-s01) + 2*b_Y1*(s-s01) + c_Y1) ;
 
-	Expression x_path2 = (a_X2*(s-ws2)*(s-ws2)*(s-ws2) + b_X2*(s-ws2)*(s-ws2) + c_X2*(s-ws2) + d_X2) ;
-	Expression y_path2 = (a_Y2*(s-ws2)*(s-ws2)*(s-ws2) + b_Y2*(s-ws2)*(s-ws2) + c_Y2*(s-ws2) + d_Y2) ;
-	Expression dx_path2 = (3*a_X2*(s-ws2)*(s-ws2) + 2*b_X2*(s-ws2) + c_X2) ;
-	Expression dy_path2 = (3*a_Y2*(s-ws2)*(s-ws2) + 2*b_Y2*(s-ws2) + c_Y2) ;
+	Expression x_path2 = (a_X2*(s-s02)*(s-s02)*(s-s02) + b_X2*(s-s02)*(s-s02) + c_X2*(s-s02) + d_X2) ;
+	Expression y_path2 = (a_Y2*(s-s02)*(s-s02)*(s-s02) + b_Y2*(s-s02)*(s-s02) + c_Y2*(s-s02) + d_Y2) ;
+	Expression dx_path2 = (3*a_X2*(s-s02)*(s-s02) + 2*b_X2*(s-s02) + c_X2) ;
+	Expression dy_path2 = (3*a_Y2*(s-s02)*(s-s02) + 2*b_Y2*(s-s02) + c_Y2) ;
 
 	Expression x_path = lambda*x_path1 + (1 - lambda)*x_path2;
 	Expression y_path = lambda*y_path1 + (1 - lambda)*y_path2;
@@ -111,14 +111,14 @@ int main( ){
     OCP ocp( 0.0, 5.0, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(23);
+    ocp.setNOD(24);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
 
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-0.5)*(v-0.5));// weight this with the physical cost!!!
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref));// weight this with the physical cost!!!
     //ocp.subjectTo( f );
 	ocp.setModel(f);
 
