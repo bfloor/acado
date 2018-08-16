@@ -7,7 +7,7 @@ s file is part of ACADO Toolkit.
  *    Developed within the Optimization in Engineering Center (OPTEC)
  *    under supervision of Moritz Diehl. All rights reserved.
  *
- *    ACADO Toolkit is free software; you can redistribute it and/or
+ *    ACADO Toolkit is free s0ftware; you can redistribute it and/or
  *    modify it under the terms of the GNU Lesser General Public
  *    License as published by the Free Software Foundation; either
  *    version 3 of the License, or (at your option) any later version.
@@ -40,14 +40,9 @@ int main( ){
 
     // INTRODUCE THE VARIABLES:
     // -------------------------
-    DifferentialState     x,y,theta,s;
-    Control               v,w   ;
+    DifferentialState     x,y,theta,s,dummy;
+    Control               v,w,sv   ;
     DifferentialEquation  f    ;
-
-    //OnlineData goal_x;
-    //OnlineData goal_y;
-    //OnlineData goal_theta;
-
 
 	OnlineData a_X;
 	OnlineData b_X;
@@ -57,26 +52,42 @@ int main( ){
 	OnlineData b_Y;
 	OnlineData c_Y;
 	OnlineData d_Y;
+
 	OnlineData Wx;
 	OnlineData Wy;
 	OnlineData Wv;
 	OnlineData Ww;
+
+	OnlineData s0;
+
+	OnlineData vref;
+
 	OnlineData ws;
+	OnlineData wP;
 
-	Expression x_path = (a_X*(s-ws)*(s-ws)*(s-ws) + b_X*(s-ws)*(s-ws) + c_X*(s-ws) + d_X) ;
-	Expression y_path = (a_Y*(s-ws)*(s-ws)*(s-ws) + b_Y*(s-ws)*(s-ws) + c_Y*(s-ws) + d_Y) ;
-	Expression dx_path = (3*a_X*(s-ws)*(s-ws) + 2*b_X*(s-ws) + c_X) ;
-	Expression dy_path = (3*a_Y*(s-ws)*(s-ws) + 2*b_Y*(s-ws) + c_Y) ;
+	OnlineData r_disc;
+	OnlineData disc_pos;
 
+	OnlineData obst1_x;
+	OnlineData obst1_y;
+	OnlineData obst1_theta;
+	OnlineData obst1_major;
+	OnlineData obst1_minor;
+
+	OnlineData obst2_x;
+	OnlineData obst2_y;
+	OnlineData obst2_theta;
+	OnlineData obst2_major;
+	OnlineData obst2_minor;
+
+	Expression x_path = (a_X*(s-s0)*(s-s0)*(s-s0) + b_X*(s-s0)*(s-s0) + c_X*(s-s0) + d_X) ;
+	Expression y_path = (a_Y*(s-s0)*(s-s0)*(s-s0) + b_Y*(s-s0)*(s-s0) + c_Y*(s-s0) + d_Y) ;
+	Expression dx_path = (3*a_X*(s-s0)*(s-s0) + 2*b_X*(s-s0) + c_X) ;
+	Expression dy_path = (3*a_Y*(s-s0)*(s-s0) + 2*b_Y*(s-s0) + c_Y) ;
 
 	Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
 	Expression dx_path_norm = dx_path/abs_grad;
 	Expression dy_path_norm =  dy_path/abs_grad;
-	// Compute the errors
-	//Expression theta_path = dy_path/dx_path;
-	//theta_path = theta_path.getAtan();
-	//Expression dx_path_norm = theta_path.getCos();
-	//Expression dy_path_norm =  theta_path.getSin();
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -85,97 +96,68 @@ int main( ){
     f << dot(y) == v*sin(theta);
     f << dot(theta) == w;
 	f << dot(s) == v;
+	f << dot(dummy) == sv;
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
     OCP ocp( 0.0, 5.0, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(13);
+    ocp.setNOD(28);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
-
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-0.2)*(v-0.2));// weight this with the physical cost!!!
-    //ocp.subjectTo( f );
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001)))); // weight this with the physical cost!!!
 	ocp.setModel(f);
 
-    //ocp.subjectTo( AT_END, s ==  2.5 );
-    //ocp.subjectTo( AT_START, y == 0.0 );
-    //ocp.subjectTo( AT_START, theta == 0.0 );
-	//ocp.subjectTo( AT_START, s == 0.0 );
-
-    ocp.subjectTo( -1 <= v <= 1.0 );
+    ocp.subjectTo( -1.0 <= v <= 1.0 );
     ocp.subjectTo( -1.0 <= w <= 1.0 );
 
+    // DEFINE COLLISION CONSTRAINTS:
+	// ---------------------------------------
 
-    // DEFINE A PLOT WINDOW:
-    // ---------------------
-    /*GnuplotWindow window;
-        window.addSubplot( x ,"X"  );
-        window.addSubplot( y ,"Y"  );
-        window.addSubplot( theta ,"Theta"  );
-        window.addSubplot( s,"V" );
+	Expression ab_1(2,2);
+	ab_1(0,0) = 1/((obst1_major + r_disc)*(obst1_major + r_disc));
+	ab_1(0,1) = 0;
+	ab_1(1,1) = 1/((obst1_minor + r_disc)*(obst1_minor + r_disc));
+	ab_1(1,0) = 0;
 
+	Expression ab_2(2,2);
+	ab_2(0,0) = 1/((obst2_major + r_disc)*(obst2_major + r_disc));
+	ab_2(0,1) = 0;
+	ab_2(1,1) = 1/((obst2_minor + r_disc)*(obst2_minor + r_disc));
+	ab_2(1,0) = 0;
 
-    // DEFINE AN OPTIMIZATION ALGORITHM AND SOLVE THE OCP:
-    // ---------------------------------------------------
-	OptimizationAlgorithm algorithm(ocp);
-	//RealTimeAlgorithm algorithm(ocp);
-    algorithm.set( HESSIAN_APPROXIMATION, BLOCK_BFGS_UPDATE );
-	algorithm.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
-	algorithm.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
-	algorithm.set(PRINT_COPYRIGHT, false);                 // default true
-	algorithm.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING);
-	Grid t(0,5.0,50);
-	VariablesGrid s2(4,0,5.0,50),c2(2,0,5.0,50);
+	Expression R_obst_1(2,2);
+	R_obst_1(0,0) = cos(obst1_theta);
+	R_obst_1(0,1) = -sin(obst1_theta);
+	R_obst_1(1,0) = sin(obst1_theta);
+	R_obst_1(1,1) = cos(obst1_theta);
 
-    algorithm.initializeDifferentialStates(s2);
-    algorithm.initializeControls          (c2);
-    
-    algorithm.set( MAX_NUM_ITERATIONS, 100 );
-    algorithm.set( KKT_TOLERANCE, 1e-8 );
-    algorithm << window;
-    //algorithm.solve(0.0,state_ini);
-	algorithm.solve();
-    VariablesGrid s3,c3;
-    algorithm.getDifferentialStates(s3);
-    algorithm.getControls          (c3);
+	Expression R_obst_2(2,2);
+	R_obst_2(0,0) = cos(obst2_theta);
+	R_obst_2(0,1) = -sin(obst2_theta);
+	R_obst_2(1,0) = sin(obst2_theta);
+	R_obst_2(1,1) = cos(obst2_theta);
 
-	IntegratorRK45 integrator( f );
+	Expression deltaPos_disc_1(2,1);
+	deltaPos_disc_1(0) =  x - obst1_x;
+	deltaPos_disc_1(1) =  y - obst1_y;
 
-	integrator.set( INTEGRATOR_PRINTLEVEL, HIGH );
-	integrator.set( INTEGRATOR_TOLERANCE, 1.0e-6 );
+	Expression deltaPos_disc_2(2,1);
+	deltaPos_disc_2(0) =  x - obst2_x;
+	deltaPos_disc_2(1) =  y - obst2_y;
 
-	// DEFINE INITIAL VALUES:
-	// ----------------------
+	Expression c_obst_1, c_obst_2;
+	c_obst_1 = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1 * R_obst_1 * deltaPos_disc_1;
+	c_obst_2 = deltaPos_disc_2.transpose() * R_obst_2.transpose() * ab_2 * R_obst_2 * deltaPos_disc_2;
 
-	double x_start[4] = { 0.0, 0.0 , 0.0, 0.0 };
-	double u      [2] = {0.0,0.0};//c3.getFirstVector();
-	double p      [1] = { 1.0      };
+	ocp.subjectTo(c_obst_1 - sv >= 1);
+	ocp.subjectTo(c_obst_2 - sv >= 1);
 
-	double t_start    =  0.0        ;
-	double t_end      =  2.5        ;
-
-
-	// START THE INTEGRATION:
-	// ----------------------
-
-	//integrator.freezeAll();
-	integrator.integrate( t_start, t_end, x_start, 0, p, u );
-
-
-	// GET THE RESULTS
-	// ---------------
-
-	VariablesGrid differentialStates;
-	integrator.getX( differentialStates );
-
-	differentialStates.print( "x" );*/
-
-	// DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
+    // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
 	OCPexport mpc( ocp );
 
