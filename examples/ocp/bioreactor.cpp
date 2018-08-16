@@ -44,11 +44,6 @@ int main( ){
     Control               v,w   ;
     DifferentialEquation  f    ;
 
-    //OnlineData goal_x;
-    //OnlineData goal_y;
-    //OnlineData goal_theta;
-
-
 	OnlineData a_X;
 	OnlineData b_X;
 	OnlineData c_X;
@@ -68,15 +63,9 @@ int main( ){
 	Expression dx_path = (3*a_X*(s-ws)*(s-ws) + 2*b_X*(s-ws) + c_X) ;
 	Expression dy_path = (3*a_Y*(s-ws)*(s-ws) + 2*b_Y*(s-ws) + c_Y) ;
 
-
 	Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
 	Expression dx_path_norm = dx_path/abs_grad;
 	Expression dy_path_norm =  dy_path/abs_grad;
-	// Compute the errors
-	//Expression theta_path = dy_path/dx_path;
-	//theta_path = theta_path.getAtan();
-	//Expression dx_path_norm = theta_path.getCos();
-	//Expression dy_path_norm =  theta_path.getSin();
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -97,83 +86,12 @@ int main( ){
 
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
-
 	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-0.2)*(v-0.2));// weight this with the physical cost!!!
-    //ocp.subjectTo( f );
-	ocp.setModel(f);
 
-    //ocp.subjectTo( AT_END, s ==  2.5 );
-    //ocp.subjectTo( AT_START, y == 0.0 );
-    //ocp.subjectTo( AT_START, theta == 0.0 );
-	//ocp.subjectTo( AT_START, s == 0.0 );
+	ocp.setModel(f);
 
     ocp.subjectTo( -1 <= v <= 1.0 );
     ocp.subjectTo( -1.0 <= w <= 1.0 );
-
-
-    // DEFINE A PLOT WINDOW:
-    // ---------------------
-    /*GnuplotWindow window;
-        window.addSubplot( x ,"X"  );
-        window.addSubplot( y ,"Y"  );
-        window.addSubplot( theta ,"Theta"  );
-        window.addSubplot( s,"V" );
-
-
-    // DEFINE AN OPTIMIZATION ALGORITHM AND SOLVE THE OCP:
-    // ---------------------------------------------------
-	OptimizationAlgorithm algorithm(ocp);
-	//RealTimeAlgorithm algorithm(ocp);
-    algorithm.set( HESSIAN_APPROXIMATION, BLOCK_BFGS_UPDATE );
-	algorithm.set(PRINTLEVEL, NONE);                       // default MEDIUM (NONE, MEDIUM, HIGH)
-	algorithm.set(PRINT_SCP_METHOD_PROFILE, false);        // default false
-	algorithm.set(PRINT_COPYRIGHT, false);                 // default true
-	algorithm.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING);
-	Grid t(0,5.0,50);
-	VariablesGrid s2(4,0,5.0,50),c2(2,0,5.0,50);
-
-    algorithm.initializeDifferentialStates(s2);
-    algorithm.initializeControls          (c2);
-    
-    algorithm.set( MAX_NUM_ITERATIONS, 100 );
-    algorithm.set( KKT_TOLERANCE, 1e-8 );
-    algorithm << window;
-    //algorithm.solve(0.0,state_ini);
-	algorithm.solve();
-    VariablesGrid s3,c3;
-    algorithm.getDifferentialStates(s3);
-    algorithm.getControls          (c3);
-
-	IntegratorRK45 integrator( f );
-
-	integrator.set( INTEGRATOR_PRINTLEVEL, HIGH );
-	integrator.set( INTEGRATOR_TOLERANCE, 1.0e-6 );
-
-	// DEFINE INITIAL VALUES:
-	// ----------------------
-
-	double x_start[4] = { 0.0, 0.0 , 0.0, 0.0 };
-	double u      [2] = {0.0,0.0};//c3.getFirstVector();
-	double p      [1] = { 1.0      };
-
-	double t_start    =  0.0        ;
-	double t_end      =  2.5        ;
-
-
-	// START THE INTEGRATION:
-	// ----------------------
-
-	//integrator.freezeAll();
-	integrator.integrate( t_start, t_end, x_start, 0, p, u );
-
-
-	// GET THE RESULTS
-	// ---------------
-
-	VariablesGrid differentialStates;
-	integrator.getX( differentialStates );
-
-	differentialStates.print( "x" );*/
 
 	// DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
