@@ -57,10 +57,12 @@ int main( ){
 	OnlineData b_Y;
 	OnlineData c_Y;
 	OnlineData d_Y;
+
 	OnlineData Wx;
 	OnlineData Wy;
 	OnlineData Wv;
 	OnlineData Ww;
+
 	OnlineData s0;
 
 	OnlineData vref;
