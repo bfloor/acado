@@ -41,7 +41,7 @@ int main( ){
 
     // INTRODUCE THE VARIABLES:
     // -------------------------
-    DifferentialState     x,y,theta, dummy, x_obst1, y_obst1, x_obst2, y_obst2, x_obst3, y_obst3, x_obst4, y_obst4;
+    DifferentialState     x,y,theta, dummy, x_obst1, y_obst1, x_obst2, y_obst2, x_obst3, y_obst3, x_obst4, y_obst4, sigm_a1, sigm_b1, sigm_a2, sigm_b2;
     Control               v,w, sv;
     DifferentialEquation  f    ;
 
@@ -97,6 +97,11 @@ int main( ){
     OnlineData obst4_vx;
     OnlineData obst4_vy;
 
+    OnlineData dsigm_a1;
+    OnlineData dsigm_b1;
+    OnlineData dsigm_a2;
+    OnlineData dsigm_b2;
+
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
 
@@ -115,11 +120,16 @@ int main( ){
     f << dot(x_obst4) == obst4_vx;
     f << dot(y_obst4) == obst4_vy;
 
-    // DEFINE AN OPTIMAL CONTROL PROBLEM:
+    f << dot(sigm_a1) == dsigm_a1;
+    f << dot(sigm_b1) == dsigm_b1;
+    f << dot(sigm_a2) == dsigm_a2;
+    f << dot(sigm_b2) == dsigm_b2;
+
+            // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
     OCP ocp( 0.0, 10, 25.0 );
 
-    ocp.setNOD(43);
+    ocp.setNOD(47);
 
     ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w + ws*sv*sv + wP*((1/((x-x_obst1)*(x-x_obst1)+(y-y_obst1)*(y-y_obst1)+0.0001)) + (1/((x-x_obst2)*(x-x_obst2)+(y-y_obst2)*(y-y_obst2)+0.0001)) + (1/((x-x_obst3)*(x-x_obst3)+(y-y_obst3)*(y-y_obst3)+0.0001)) + (1/((x-x_obst4)*(x-x_obst4)+(y-y_obst4)*(y-y_obst4)+0.0001))));  // weigh this with the physical cost!!!
 //    ocp.minimizeLagrangeTerm(wX*(x-goal_x)*(x-goal_x)+ wY*(y-goal_y)*(y-goal_y)+ wTheta*(theta-goal_theta)*(theta-goal_theta)+wV*v*v+wW*w*w + ws*sv*sv + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001))));  // weigh this with the physical cost!!!
@@ -135,15 +145,15 @@ int main( ){
     // ---------------------------------------
 
     Expression ab_1(2,2);
-    ab_1(0,0) = 1/((obst1_major + r_disc)*(obst1_major + r_disc));
+    ab_1(0,0) = 1/((obst1_major + r_disc + sigm_a1)*(obst1_major + r_disc + sigm_a1));
     ab_1(0,1) = 0;
-    ab_1(1,1) = 1/((obst1_minor + r_disc)*(obst1_minor + r_disc));
+    ab_1(1,1) = 1/((obst1_minor + r_disc + sigm_b1)*(obst1_minor + r_disc + sigm_b1));
     ab_1(1,0) = 0;
 
     Expression ab_2(2,2);
-    ab_2(0,0) = 1/((obst2_major + r_disc)*(obst2_major + r_disc));
+    ab_2(0,0) = 1/((obst2_major + r_disc + sigm_a2)*(obst2_major + r_disc + sigm_a2));
     ab_2(0,1) = 0;
-    ab_2(1,1) = 1/((obst2_minor + r_disc)*(obst2_minor + r_disc));
+    ab_2(1,1) = 1/((obst2_minor + r_disc + sigm_a2)*(obst2_minor + r_disc + sigm_a2));
     ab_2(1,0) = 0;
 
     Expression ab_3(2,2);
