@@ -44,23 +44,36 @@ int main( ){
     Control               v,w,sv   ;
     DifferentialEquation  f    ;
 
-	OnlineData a_X;
-	OnlineData b_X;
-	OnlineData c_X;
-	OnlineData d_X;
-	OnlineData a_Y;
-	OnlineData b_Y;
-	OnlineData c_Y;
-	OnlineData d_Y;
+	OnlineData a_X1;
+	OnlineData b_X1;
+	OnlineData c_X1;
+	OnlineData d_X1;
+	OnlineData a_Y1;
+	OnlineData b_Y1;
+	OnlineData c_Y1;
+	OnlineData d_Y1;
+
+	OnlineData a_X2;
+	OnlineData b_X2;
+	OnlineData c_X2;
+	OnlineData d_X2;
+	OnlineData a_Y2;
+	OnlineData b_Y2;
+	OnlineData c_Y2;
+	OnlineData d_Y2;
 
 	OnlineData Wx;
 	OnlineData Wy;
 	OnlineData Wv;
 	OnlineData Ww;
+	
+	OnlineData s01;
+	OnlineData s02;
 
-	OnlineData s0;
+	OnlineData vref1;
+	OnlineData vref2;
 
-	OnlineData vref;
+	OnlineData delta;
 
 	OnlineData ws;
 	OnlineData wP;
@@ -80,14 +93,28 @@ int main( ){
 	OnlineData obst2_major;
 	OnlineData obst2_minor;
 
-	Expression x_path = (a_X*(s-s0)*(s-s0)*(s-s0) + b_X*(s-s0)*(s-s0) + c_X*(s-s0) + d_X) ;
-	Expression y_path = (a_Y*(s-s0)*(s-s0)*(s-s0) + b_Y*(s-s0)*(s-s0) + c_Y*(s-s0) + d_Y) ;
-	Expression dx_path = (3*a_X*(s-s0)*(s-s0) + 2*b_X*(s-s0) + c_X) ;
-	Expression dy_path = (3*a_Y*(s-s0)*(s-s0) + 2*b_Y*(s-s0) + c_Y) ;
+	Expression lambda = 1/(1 + exp((s - delta)/0.1));
+
+	Expression x_path1 = (a_X1*(s-s01)*(s-s01)*(s-s01) + b_X1*(s-s01)*(s-s01) + c_X1*(s-s01) + d_X1) ;
+	Expression y_path1 = (a_Y1*(s-s01)*(s-s01)*(s-s01) + b_Y1*(s-s01)*(s-s01) + c_Y1*(s-s01) + d_Y1) ;
+	Expression dx_path1 = (3*a_X1*(s-s01)*(s-s01) + 2*b_X1*(s-s01) + c_X1) ;
+	Expression dy_path1 = (3*a_Y1*(s-s01)*(s-s01) + 2*b_Y1*(s-s01) + c_Y1) ;
+
+	Expression x_path2 = (a_X2*(s-s02)*(s-s02)*(s-s02) + b_X2*(s-s02)*(s-s02) + c_X2*(s-s02) + d_X2) ;
+	Expression y_path2 = (a_Y2*(s-s02)*(s-s02)*(s-s02) + b_Y2*(s-s02)*(s-s02) + c_Y2*(s-s02) + d_Y2) ;
+	Expression dx_path2 = (3*a_X2*(s-s02)*(s-s02) + 2*b_X2*(s-s02) + c_X2) ;
+	Expression dy_path2 = (3*a_Y2*(s-s02)*(s-s02) + 2*b_Y2*(s-s02) + c_Y2) ;
+
+	Expression x_path = lambda*x_path1 + (1 - lambda)*x_path2;
+	Expression y_path = lambda*y_path1 + (1 - lambda)*y_path2;
+	Expression dx_path = lambda*dx_path1 + (1 - lambda)*dx_path2;
+	Expression dy_path = lambda*dy_path1 + (1 - lambda)*dy_path2;
 
 	Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
 	Expression dx_path_norm = dx_path/abs_grad;
 	Expression dy_path_norm =  dy_path/abs_grad;
+
+	Expression vref = lambda*vref1 + (1 - lambda)*vref2;
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -103,7 +130,7 @@ int main( ){
     OCP ocp( 0.0, 5.0, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(28);
+    ocp.setNOD(38);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
