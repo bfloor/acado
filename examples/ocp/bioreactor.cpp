@@ -93,6 +93,9 @@ int main( ){
 	OnlineData obst2_major;
 	OnlineData obst2_minor;
 
+	OnlineData r1;
+	OnlineData r2;
+
 	Expression lambda = 1/(1 + exp((s - delta)/0.1));
 
 	Expression x_path1 = (a_X1*(s-s01)*(s-s01)*(s-s01) + b_X1*(s-s01)*(s-s01) + c_X1*(s-s01) + d_X1) ;
@@ -115,6 +118,7 @@ int main( ){
 	Expression dy_path_norm =  dy_path/abs_grad;
 
 	Expression vref = lambda*vref1 + (1 - lambda)*vref2;
+    Expression r = lambda*r1 + (1 - lambda)*r2;
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -130,7 +134,7 @@ int main( ){
     OCP ocp( 0.0, 5.0, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(38);
+    ocp.setNOD(41);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
@@ -183,6 +187,9 @@ int main( ){
 
 	ocp.subjectTo(c_obst_1 - sv >= 1);
 	ocp.subjectTo(c_obst_2 - sv >= 1);
+
+	ocp.subjectTo( (x - x_path)*(x - x_path) + (y - y_path)*(y - y_path) <= r);
+
 
     // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
