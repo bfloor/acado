@@ -140,7 +140,7 @@ int main( ){
 
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001)))); // weight this with the physical cost!!!
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + ws*sv*sv + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001)))); // weight this with the physical cost!!!
 	ocp.setModel(f);
 
     ocp.subjectTo( -1.0 <= v <= 1.0 );
@@ -188,7 +188,7 @@ int main( ){
 	ocp.subjectTo(c_obst_1 - sv >= 1);
 	ocp.subjectTo(c_obst_2 - sv >= 1);
 
-	ocp.subjectTo( (x - x_path)*(x - x_path) + (y - y_path)*(y - y_path) <= r);
+	ocp.subjectTo( r - (x - x_path)*(x - x_path) - (y - y_path)*(y - y_path) >= 0);
 
 
     // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
