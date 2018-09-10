@@ -40,9 +40,9 @@ int main( ){
 
     // INTRODUCE THE VARIABLES:
     // -------------------------
-    DifferentialState     x,y,theta,s,dummy;
-    Control               v,w,sv   ;
-    DifferentialEquation  f    ;
+    DifferentialState     x,y,theta,s,dummy1,dummy2;
+    Control               v,w,sv1,sv2;
+    DifferentialEquation  f;
 
 	OnlineData a_X1;
 	OnlineData b_X1;
@@ -93,8 +93,9 @@ int main( ){
 	OnlineData obst2_major;
 	OnlineData obst2_minor;
 
-	OnlineData r1;
-	OnlineData r2;
+	OnlineData collision_free_r;
+	OnlineData collision_free_x;
+    OnlineData collision_free_y;
 
 	Expression lambda = 1/(1 + exp((s - delta)/0.1));
 
@@ -118,7 +119,6 @@ int main( ){
 	Expression dy_path_norm =  dy_path/abs_grad;
 
 	Expression vref = lambda*vref1 + (1 - lambda)*vref2;
-    Expression r = lambda*r1 + (1 - lambda)*r2;
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -127,20 +127,21 @@ int main( ){
     f << dot(y) == v*sin(theta);
     f << dot(theta) == w;
 	f << dot(s) == v;
-	f << dot(dummy) == sv;
+	f << dot(dummy1) == sv1;
+    f << dot(dummy2) == sv2;
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
     OCP ocp( 0.0, 2.5, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(41);
+    ocp.setNOD(42);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + ws*sv*sv + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001)))); // weight this with the physical cost!!!
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + ws*sv1*sv1 + ws*sv2*sv2 + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001)))); // weight this with the physical cost!!!
 	ocp.setModel(f);
 
     ocp.subjectTo( -2.0 <= v <= 2.0 );
@@ -185,29 +186,30 @@ int main( ){
 	c_obst_1 = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1 * R_obst_1 * deltaPos_disc_1;
 	c_obst_2 = deltaPos_disc_2.transpose() * R_obst_2.transpose() * ab_2 * R_obst_2 * deltaPos_disc_2;
 
-	ocp.subjectTo(c_obst_1 - sv >= 1);
-	ocp.subjectTo(c_obst_2 - sv >= 1);
+	ocp.subjectTo(c_obst_1 + sv1 >= 1);
+	ocp.subjectTo(c_obst_2 + sv1 >= 1);
 
-	ocp.subjectTo( r - (x - x_path)*(x - x_path) - (y - y_path)*(y - y_path) >= 0);
+    ocp.subjectTo( (collision_free_r)*(collision_free_r) - (x - collision_free_x)*(x - collision_free_x) - (y - collision_free_y)*(y - collision_free_y) - 0.01 - r_disc*r_disc + sv2 >= 0);
 
+//    ocp.subjectTo( v*0.1 - collision_free_r + r_disc + sv2 <= 0 );
 
     // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
 	OCPexport mpc( ocp );
 
-	mpc.set( HESSIAN_APPROXIMATION,       EXACT_HESSIAN  		);
-	mpc.set( DISCRETIZATION_TYPE,         MULTIPLE_SHOOTING 	);
-	mpc.set( INTEGRATOR_TYPE,             INT_RK4			);
-	mpc.set( NUM_INTEGRATOR_STEPS,        25            		);
-	mpc.set( QP_SOLVER,                   QP_QPOASES    		);
-	mpc.set( HOTSTART_QP,                 NO             		);
-	mpc.set( GENERATE_TEST_FILE,          YES            		);
-	mpc.set( GENERATE_MAKE_FILE,          YES            		);
-	mpc.set( GENERATE_MATLAB_INTERFACE,   NO            		);
-	mpc.set( SPARSE_QP_SOLUTION, 		  FULL_CONDENSING_N2	);
-	mpc.set( DYNAMIC_SENSITIVITY, 		  SYMMETRIC				);
-	mpc.set( CG_HARDCODE_CONSTRAINT_VALUES, NO 					);
-	mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES 				);
+	mpc.set( HESSIAN_APPROXIMATION,            EXACT_HESSIAN  		);
+	mpc.set( DISCRETIZATION_TYPE,              MULTIPLE_SHOOTING 	);
+	mpc.set( INTEGRATOR_TYPE,                  INT_RK4			    );
+	mpc.set( NUM_INTEGRATOR_STEPS,             25            		);
+	mpc.set( QP_SOLVER,                        QP_QPOASES    		);
+	mpc.set( HOTSTART_QP,                      NO             		);
+	mpc.set( GENERATE_TEST_FILE,               YES            		);
+	mpc.set( GENERATE_MAKE_FILE,               YES            		);
+	mpc.set( GENERATE_MATLAB_INTERFACE,        NO            		);
+	mpc.set( SPARSE_QP_SOLUTION, 		       FULL_CONDENSING_N2	);
+	mpc.set( DYNAMIC_SENSITIVITY, 		       SYMMETRIC			);
+	mpc.set( CG_HARDCODE_CONSTRAINT_VALUES,    NO 					);
+	mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES 					);
 
 	mpc.exportCode( "generated_mpc" );
 	mpc.printDimensionsQP( );
