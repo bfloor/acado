@@ -40,8 +40,8 @@ int main( ){
 
     // INTRODUCE THE VARIABLES:
     // -------------------------
-    DifferentialState     x,y,theta,s,dummy1;
-    Control               v,w,sv1;
+    DifferentialState     x,y,theta,s,dummy1,dummy2;
+    Control               v,w,sv1,sv2;
     DifferentialEquation  f;
 
 	OnlineData a_X1;
@@ -105,6 +105,15 @@ int main( ){
 	OnlineData obst2_major;
 	OnlineData obst2_minor;
 
+	OnlineData collision_free_r;
+	OnlineData collision_free_x;
+    OnlineData collision_free_y;
+
+	OnlineData collision_free_xmin;
+	OnlineData collision_free_xmax;
+	OnlineData collision_free_ymin;
+	OnlineData collision_free_ymax;
+
 	Expression lambda1 = 1/(1 + exp((s - delta1)/0.1));
 	Expression lambda2 = 1/(1 + exp((s - delta2)/0.1));
 
@@ -142,21 +151,21 @@ int main( ){
     f << dot(theta) == w;
 	f << dot(s) == v;
 	f << dot(dummy1) == sv1;
+    f << dot(dummy2) == sv2;
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
     OCP ocp( 0.0, 2.5, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(50);
+    ocp.setNOD(57);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + ws*sv1*sv1 + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001)))); // weight this with the physical cost!!!
-	
-    ocp.setModel(f);
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + ws*sv1*sv1 + ws*sv2*sv2 + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001)))); // weight this with the physical cost!!!
+	ocp.setModel(f);
 
     ocp.subjectTo( -2.0 <= v <= 2.0 );
     ocp.subjectTo( -1.0 <= w <= 1.0 );
@@ -202,6 +211,13 @@ int main( ){
 
 	ocp.subjectTo(c_obst_1 + sv1 >= 1);
 	ocp.subjectTo(c_obst_2 + sv1 >= 1);
+
+//	ocp.subjectTo( (collision_free_r)*(collision_free_r) - (x - collision_free_x)*(x - collision_free_x) - (y - collision_free_y)*(y - collision_free_y) - 0.01 - r_disc*r_disc + sv2 >= 0);
+
+	ocp.subjectTo( y - collision_free_y - collision_free_ymin + sv2 >= 0 );
+	ocp.subjectTo( collision_free_y + collision_free_ymax - y - sv2 >= 0 );
+	ocp.subjectTo( x - collision_free_x - collision_free_xmin + sv2 >= 0 );
+	ocp.subjectTo( collision_free_x + collision_free_xmax - x - sv2 >= 0 );
 
     // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
