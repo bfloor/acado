@@ -114,6 +114,21 @@ int main( ){
 	OnlineData collision_free_ymin;
 	OnlineData collision_free_ymax;
 
+	OnlineData collision_free_a1x;
+	OnlineData collision_free_a2x;
+	OnlineData collision_free_a3x;
+	OnlineData collision_free_a4x;
+
+	OnlineData collision_free_a1y;
+	OnlineData collision_free_a2y;
+	OnlineData collision_free_a3y;
+	OnlineData collision_free_a4y;
+
+	OnlineData collision_free_C1;
+	OnlineData collision_free_C2;
+	OnlineData collision_free_C3;
+	OnlineData collision_free_C4;
+
 	Expression lambda1 = 1/(1 + exp((s - delta1)/0.1));
 	Expression lambda2 = 1/(1 + exp((s - delta2)/0.1));
 
@@ -158,7 +173,7 @@ int main( ){
     OCP ocp( 0.0, 2.5, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(57);
+    ocp.setNOD(69);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
@@ -214,10 +229,15 @@ int main( ){
 
 //	ocp.subjectTo( (collision_free_r)*(collision_free_r) - (x - collision_free_x)*(x - collision_free_x) - (y - collision_free_y)*(y - collision_free_y) - 0.01 - r_disc*r_disc + sv2 >= 0);
 
-	ocp.subjectTo( y - collision_free_y - collision_free_ymin + sv2 >= 0 );
-	ocp.subjectTo( collision_free_y + collision_free_ymax - y - sv2 >= 0 );
-	ocp.subjectTo( x - collision_free_x - collision_free_xmin + sv2 >= 0 );
-	ocp.subjectTo( collision_free_x + collision_free_xmax - x - sv2 >= 0 );
+//	ocp.subjectTo( y - collision_free_y - collision_free_ymin + sv2 >= 0 );
+//	ocp.subjectTo( collision_free_y + collision_free_ymax - y - sv2 >= 0 );
+//	ocp.subjectTo( x - collision_free_x - collision_free_xmin + sv2 >= 0 );
+//	ocp.subjectTo( collision_free_x + collision_free_xmax - x - sv2 >= 0 );
+
+    ocp.subjectTo( x*collision_free_a1x + y*collision_free_a1y - collision_free_C1 + sv2 >= 0 );
+    ocp.subjectTo( x*collision_free_a2x + y*collision_free_a2y - collision_free_C2 + sv2 >= 0 );
+    ocp.subjectTo( x*collision_free_a3x + y*collision_free_a3y - collision_free_C3 + sv2 >= 0 );
+    ocp.subjectTo( x*collision_free_a4x + y*collision_free_a4y - collision_free_C4 + sv2 >= 0 );
 
     // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
