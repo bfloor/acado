@@ -40,8 +40,8 @@ int main( ){
 
     // INTRODUCE THE VARIABLES:
     // -------------------------
-    DifferentialState     x,y,theta,s,dummy1,dummy2;
-    Control               v,w,sv1,sv2;
+    DifferentialState     x,y,theta,s;
+    Control               v,w;
     DifferentialEquation  f;
 
 	OnlineData a_X1;
@@ -87,48 +87,6 @@ int main( ){
 	OnlineData delta1;
 	OnlineData delta2;
 
-	OnlineData ws;
-	OnlineData wP;
-
-	OnlineData r_disc;
-	OnlineData disc_pos;
-
-	OnlineData obst1_x;
-	OnlineData obst1_y;
-	OnlineData obst1_theta;
-	OnlineData obst1_major;
-	OnlineData obst1_minor;
-
-	OnlineData obst2_x;
-	OnlineData obst2_y;
-	OnlineData obst2_theta;
-	OnlineData obst2_major;
-	OnlineData obst2_minor;
-
-	OnlineData collision_free_r;
-	OnlineData collision_free_x;
-    OnlineData collision_free_y;
-
-	OnlineData collision_free_xmin;
-	OnlineData collision_free_xmax;
-	OnlineData collision_free_ymin;
-	OnlineData collision_free_ymax;
-
-	OnlineData collision_free_a1x;
-	OnlineData collision_free_a2x;
-	OnlineData collision_free_a3x;
-	OnlineData collision_free_a4x;
-
-	OnlineData collision_free_a1y;
-	OnlineData collision_free_a2y;
-	OnlineData collision_free_a3y;
-	OnlineData collision_free_a4y;
-
-	OnlineData collision_free_C1;
-	OnlineData collision_free_C2;
-	OnlineData collision_free_C3;
-	OnlineData collision_free_C4;
-
 	Expression lambda1 = 1/(1 + exp((s - delta1)/0.1));
 	Expression lambda2 = 1/(1 + exp((s - delta2)/0.1));
 
@@ -165,79 +123,23 @@ int main( ){
     f << dot(y) == v*sin(theta);
     f << dot(theta) == w;
 	f << dot(s) == v;
-	f << dot(dummy1) == sv1;
-    f << dot(dummy2) == sv2;
 
     // DEFINE AN OPTIMAL CONTROL PROBLEM:
     // ----------------------------------
     OCP ocp( 0.0, 2.5, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(69);
+    ocp.setNOD(36);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + ws*sv1*sv1 + ws*sv2*sv2 + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001)))); // weight this with the physical cost!!!
+	ocp.minimizeLagrangeTerm( Wx*error_contour*error_contour + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) ); // weight this with the physical cost!!!
 	ocp.setModel(f);
 
     ocp.subjectTo( -2.0 <= v <= 2.0 );
     ocp.subjectTo( -1.0 <= w <= 1.0 );
-
-    // DEFINE COLLISION CONSTRAINTS:
-	// ---------------------------------------
-
-	Expression ab_1(2,2);
-	ab_1(0,0) = 1/((obst1_major + r_disc)*(obst1_major + r_disc));
-	ab_1(0,1) = 0;
-	ab_1(1,1) = 1/((obst1_minor + r_disc)*(obst1_minor + r_disc));
-	ab_1(1,0) = 0;
-
-	Expression ab_2(2,2);
-	ab_2(0,0) = 1/((obst2_major + r_disc)*(obst2_major + r_disc));
-	ab_2(0,1) = 0;
-	ab_2(1,1) = 1/((obst2_minor + r_disc)*(obst2_minor + r_disc));
-	ab_2(1,0) = 0;
-
-	Expression R_obst_1(2,2);
-	R_obst_1(0,0) = cos(obst1_theta);
-	R_obst_1(0,1) = -sin(obst1_theta);
-	R_obst_1(1,0) = sin(obst1_theta);
-	R_obst_1(1,1) = cos(obst1_theta);
-
-	Expression R_obst_2(2,2);
-	R_obst_2(0,0) = cos(obst2_theta);
-	R_obst_2(0,1) = -sin(obst2_theta);
-	R_obst_2(1,0) = sin(obst2_theta);
-	R_obst_2(1,1) = cos(obst2_theta);
-
-	Expression deltaPos_disc_1(2,1);
-	deltaPos_disc_1(0) =  x - obst1_x;
-	deltaPos_disc_1(1) =  y - obst1_y;
-
-	Expression deltaPos_disc_2(2,1);
-	deltaPos_disc_2(0) =  x - obst2_x;
-	deltaPos_disc_2(1) =  y - obst2_y;
-
-	Expression c_obst_1, c_obst_2;
-	c_obst_1 = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1 * R_obst_1 * deltaPos_disc_1;
-	c_obst_2 = deltaPos_disc_2.transpose() * R_obst_2.transpose() * ab_2 * R_obst_2 * deltaPos_disc_2;
-
-	ocp.subjectTo(c_obst_1 + sv1 >= 1);
-	ocp.subjectTo(c_obst_2 + sv1 >= 1);
-
-//	ocp.subjectTo( (collision_free_r)*(collision_free_r) - (x - collision_free_x)*(x - collision_free_x) - (y - collision_free_y)*(y - collision_free_y) - 0.01 - r_disc*r_disc + sv2 >= 0);
-
-//	ocp.subjectTo( y - collision_free_y - collision_free_ymin + sv2 >= 0 );
-//	ocp.subjectTo( collision_free_y + collision_free_ymax - y - sv2 >= 0 );
-//	ocp.subjectTo( x - collision_free_x - collision_free_xmin + sv2 >= 0 );
-//	ocp.subjectTo( collision_free_x + collision_free_xmax - x - sv2 >= 0 );
-
-    ocp.subjectTo( x*collision_free_a1x + y*collision_free_a1y - collision_free_C1 + sv2 >= 0 );
-    ocp.subjectTo( x*collision_free_a2x + y*collision_free_a2y - collision_free_C2 + sv2 >= 0 );
-    ocp.subjectTo( x*collision_free_a3x + y*collision_free_a3y - collision_free_C3 + sv2 >= 0 );
-    ocp.subjectTo( x*collision_free_a4x + y*collision_free_a4y - collision_free_C4 + sv2 >= 0 );
 
     // DEFINE AN MPC EXPORT MODULE AND GENERATE THE CODE:
 	// ----------------------------------------------------------
@@ -260,7 +162,6 @@ int main( ){
 	mpc.exportCode( "generated_mpc" );
 	mpc.printDimensionsQP( );
 	// ----------------------------------------------------------
-
 
     return 0;
 }
