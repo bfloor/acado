@@ -105,10 +105,6 @@ int main( ){
 	OnlineData obst2_major;
 	OnlineData obst2_minor;
 
-	OnlineData collision_free_r;
-	OnlineData collision_free_x;
-    OnlineData collision_free_y;
-
 	OnlineData collision_free_xmin;
 	OnlineData collision_free_xmax;
 	OnlineData collision_free_ymin;
@@ -173,7 +169,7 @@ int main( ){
     OCP ocp( 0.0, 2.5, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(69);
+    ocp.setNOD(66);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
@@ -226,13 +222,6 @@ int main( ){
 
 	ocp.subjectTo(c_obst_1 + sv1 >= 1);
 	ocp.subjectTo(c_obst_2 + sv1 >= 1);
-
-//	ocp.subjectTo( (collision_free_r)*(collision_free_r) - (x - collision_free_x)*(x - collision_free_x) - (y - collision_free_y)*(y - collision_free_y) - 0.01 - r_disc*r_disc + sv2 >= 0);
-
-//	ocp.subjectTo( y - collision_free_y - collision_free_ymin + sv2 >= 0 );
-//	ocp.subjectTo( collision_free_y + collision_free_ymax - y - sv2 >= 0 );
-//	ocp.subjectTo( x - collision_free_x - collision_free_xmin + sv2 >= 0 );
-//	ocp.subjectTo( collision_free_x + collision_free_xmax - x - sv2 >= 0 );
 
     ocp.subjectTo( x*collision_free_a1x + y*collision_free_a1y - collision_free_C1 + sv2 >= 0 );
     ocp.subjectTo( x*collision_free_a2x + y*collision_free_a2y - collision_free_C2 + sv2 >= 0 );
