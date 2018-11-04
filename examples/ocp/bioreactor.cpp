@@ -105,25 +105,9 @@ int main( ){
 	OnlineData obst2_major;
 	OnlineData obst2_minor;
 
-	OnlineData collision_free_xmin;
-	OnlineData collision_free_xmax;
-	OnlineData collision_free_ymin;
-	OnlineData collision_free_ymax;
-
-	OnlineData collision_free_a1x;
-	OnlineData collision_free_a2x;
-	OnlineData collision_free_a3x;
-	OnlineData collision_free_a4x;
-
-	OnlineData collision_free_a1y;
-	OnlineData collision_free_a2y;
-	OnlineData collision_free_a3y;
-	OnlineData collision_free_a4y;
-
-	OnlineData collision_free_C1;
-	OnlineData collision_free_C2;
-	OnlineData collision_free_C3;
-	OnlineData collision_free_C4;
+	OnlineData collision_free_r;
+	OnlineData collision_free_x;
+    OnlineData collision_free_y;
 
 	Expression lambda1 = 1/(1 + exp((s - delta1)/0.1));
 	Expression lambda2 = 1/(1 + exp((s - delta2)/0.1));
@@ -169,7 +153,7 @@ int main( ){
     OCP ocp( 0.0, 2.5, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(66);
+    ocp.setNOD(53);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
