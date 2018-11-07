@@ -175,7 +175,7 @@ int main( ){
 
 	Expression error_lag       = -dx_path_norm * (x - x_path) - dy_path_norm * (y - y_path);
 
-	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + ws*sv1*sv1 + ws*sv2*sv2 + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((x-obst1_x)*(x-obst1_x)+(y-obst1_y)*(y-obst1_y)+0.0001)) + (1/((x-obst2_x)*(x-obst2_x)+(y-obst2_y)*(y-obst2_y)+0.0001)))); // weight this with the physical cost!!!
+	ocp.minimizeLagrangeTerm(Wx*error_contour*error_contour + ws*sv1*sv1 + ws*sv2*sv2 + Wy*error_lag*error_lag + Ww*w*w +Wv*(v-vref)*(v-vref) + wP*((1/((obst1_x)*(obst1_x)+(obst1_y)*(obst1_y)+0.0001)) + (1/((obst2_x)*(obst2_x)+(obst2_y)*(obst2_y)+0.0001)))); // weight this with the physical cost!!!
 	ocp.setModel(f);
 
     ocp.subjectTo( -2.0 <= v <= 2.0 );
@@ -209,12 +209,12 @@ int main( ){
 	R_obst_2(1,1) = cos(obst2_theta);
 
 	Expression deltaPos_disc_1(2,1);
-	deltaPos_disc_1(0) =  x - obst1_x;
-	deltaPos_disc_1(1) =  y - obst1_y;
+	deltaPos_disc_1(0) =  obst1_x;
+	deltaPos_disc_1(1) =  obst1_y;
 
 	Expression deltaPos_disc_2(2,1);
-	deltaPos_disc_2(0) =  x - obst2_x;
-	deltaPos_disc_2(1) =  y - obst2_y;
+	deltaPos_disc_2(0) =  obst2_x;
+	deltaPos_disc_2(1) =  obst2_y;
 
 	Expression c_obst_1, c_obst_2;
 	c_obst_1 = deltaPos_disc_1.transpose() * R_obst_1.transpose() * ab_1 * R_obst_1 * deltaPos_disc_1;
