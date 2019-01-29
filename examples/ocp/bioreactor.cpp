@@ -71,6 +71,24 @@ int main( ){
 	OnlineData c_Y3;
 	OnlineData d_Y3;
 
+	OnlineData a_X4;
+	OnlineData b_X4;
+	OnlineData c_X4;
+	OnlineData d_X4;
+	OnlineData a_Y4;
+	OnlineData b_Y4;
+	OnlineData c_Y4;
+	OnlineData d_Y4;
+
+	OnlineData a_X5;
+	OnlineData b_X5;
+	OnlineData c_X5;
+	OnlineData d_X5;
+	OnlineData a_Y5;
+	OnlineData b_Y5;
+	OnlineData c_Y5;
+	OnlineData d_Y5;
+
 	OnlineData Wx;
 	OnlineData Wy;
 	OnlineData Wv;
@@ -79,13 +97,19 @@ int main( ){
 	OnlineData s01;
 	OnlineData s02;
 	OnlineData s03;
+	OnlineData s04;
+	OnlineData s05;
 
 	OnlineData vref1;
 	OnlineData vref2;
 	OnlineData vref3;
+	OnlineData vref4;
+	OnlineData vref5;
 
 	OnlineData delta1;
 	OnlineData delta2;
+	OnlineData delta3;
+	OnlineData delta4;
 
 	OnlineData ws;
 	OnlineData wP;
@@ -127,6 +151,8 @@ int main( ){
 
 	Expression lambda1 = 1/(1 + exp((s - delta1)/0.1));
 	Expression lambda2 = 1/(1 + exp((s - delta2)/0.1));
+	Expression lambda3 = 1/(1 + exp((s - delta3)/0.1));
+	Expression lambda4 = 1/(1 + exp((s - delta4)/0.1));
 
 	Expression x_path1 = (a_X1*(s-s01)*(s-s01)*(s-s01) + b_X1*(s-s01)*(s-s01) + c_X1*(s-s01) + d_X1) ;
 	Expression y_path1 = (a_Y1*(s-s01)*(s-s01)*(s-s01) + b_Y1*(s-s01)*(s-s01) + c_Y1*(s-s01) + d_Y1) ;
@@ -143,16 +169,26 @@ int main( ){
 	Expression dx_path3 = (3*a_X3*(s-s03)*(s-s03) + 2*b_X3*(s-s03) + c_X3) ;
 	Expression dy_path3 = (3*a_Y3*(s-s03)*(s-s03) + 2*b_Y3*(s-s03) + c_Y3) ;
 
-	Expression x_path = lambda1*lambda2*x_path1 + (1 - lambda1)*lambda2*x_path2 + (1 - lambda2)*x_path3;
-	Expression y_path = lambda1*lambda2*y_path1 + (1 - lambda1)*lambda2*y_path2 + (1 - lambda2)*y_path3;
-	Expression dx_path = lambda1*lambda2*dx_path1 + (1 - lambda1)*lambda2*dx_path2 + (1 - lambda2)*dx_path3;
-	Expression dy_path = lambda1*lambda2*dy_path1 + (1 - lambda1)*lambda2*dy_path2 + (1 - lambda2)*dy_path3;
+	Expression x_path4 = (a_X4*(s-s04)*(s-s04)*(s-s04) + b_X4*(s-s04)*(s-s04) + c_X4*(s-s04) + d_X4) ;
+	Expression y_path4 = (a_Y4*(s-s04)*(s-s04)*(s-s04) + b_Y4*(s-s04)*(s-s04) + c_Y4*(s-s04) + d_Y4) ;
+	Expression dx_path4 = (3*a_X4*(s-s04)*(s-s04) + 2*b_X4*(s-s04) + c_X4) ;
+	Expression dy_path4 = (3*a_Y4*(s-s04)*(s-s04) + 2*b_Y4*(s-s04) + c_Y4) ;
+
+	Expression x_path5 = (a_X5*(s-s05)*(s-s05)*(s-s05) + b_X5*(s-s05)*(s-s05) + c_X5*(s-s05) + d_X5) ;
+	Expression y_path5 = (a_Y5*(s-s05)*(s-s05)*(s-s05) + b_Y5*(s-s05)*(s-s05) + c_Y5*(s-s05) + d_Y5) ;
+	Expression dx_path5 = (3*a_X5*(s-s05)*(s-s05) + 2*b_X5*(s-s05) + c_X5) ;
+	Expression dy_path5 = (3*a_Y5*(s-s05)*(s-s05) + 2*b_Y5*(s-s05) + c_Y5) ;
+
+	Expression x_path = lambda1*lambda2*lambda3*lambda4*x_path1 + (1 - lambda1)*lambda2*lambda3*lambda4*x_path2 + (1 - lambda1)*(1 - lambda2)*lambda3*lambda4*x_path3 + (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*lambda4*x_path4 + (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*(1 - lambda4)*x_path5;
+	Expression y_path = lambda1*lambda2*lambda3*lambda4*y_path1 + (1 - lambda1)*lambda2*lambda3*lambda4*y_path2 + (1 - lambda1)*(1 - lambda2)*lambda3*lambda4*y_path3 + (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*lambda4*y_path4 + (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*(1 - lambda4)*y_path5;
+	Expression dx_path = lambda1*lambda2*lambda3*lambda4*dx_path1 + (1 - lambda1)*lambda2*lambda3*lambda4*dx_path2 + (1 - lambda1)*(1 - lambda2)*lambda3*lambda4*dx_path3 + (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*lambda4*dx_path4 + (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*(1 - lambda4)*dx_path5;
+	Expression dy_path = lambda1*lambda2*lambda3*lambda4*dy_path1 + (1 - lambda1)*lambda2*lambda3*lambda4*dy_path2 + (1 - lambda1)*(1 - lambda2)*lambda3*lambda4*dy_path3 + (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*lambda4*dy_path4 + (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*(1 - lambda4)*dy_path5;
 
 	Expression abs_grad = sqrt(dx_path.getPowInt(2) + dy_path.getPowInt(2));
 	Expression dx_path_norm = dx_path/abs_grad;
 	Expression dy_path_norm =  dy_path/abs_grad;
 
-	Expression vref = lambda1*lambda2*vref1 + (1 - lambda1)*lambda2*vref2 + (1 - lambda2)*vref3;
+	Expression vref = lambda1*lambda2*lambda3*lambda4*vref1 + (1 - lambda1)*lambda2*lambda3*lambda4*vref2 + (1 - lambda1)*(1 - lambda2)*lambda3*lambda4*vref3 + (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*lambda4*vref4 +  (1 - lambda1)*(1 - lambda2)*(1 - lambda3)*(1 - lambda4)*vref5;
 
     // DEFINE A DIFFERENTIAL EQUATION:
     // -------------------------------
@@ -169,7 +205,7 @@ int main( ){
     OCP ocp( 0.0, 5, 25.0 );
 
     // Need to set the number of online variables!
-    ocp.setNOD(66);
+    ocp.setNOD(88);
 
 	Expression error_contour   = dy_path_norm * (x - x_path) - dx_path_norm * (y - y_path);
 
@@ -246,7 +282,7 @@ int main( ){
 	mpc.set( CG_HARDCODE_CONSTRAINT_VALUES,    NO 					);
 	mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES 					);
 
-	mpc.exportCode( "generated_mpc" );
+	mpc.exportCode( "ocp" );
 	mpc.printDimensionsQP( );
 	// ----------------------------------------------------------
 
